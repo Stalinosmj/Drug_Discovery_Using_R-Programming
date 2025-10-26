@@ -79,7 +79,7 @@ cores <- setup_parallel()
 # Train Random Forest with progress
 cli::cli_alert_info("Training Random Forest with optimized parameters...")
 
-handlers(global = TRUE)
+
 handlers("cli")
 
 tic("Random Forest Training")
@@ -173,62 +173,58 @@ param_grid <- expand.grid(
 
 cli::cli_alert_info(glue("Testing {nrow(param_grid)} parameter combinations"))
 
-# Setup parallel processing
-cores <- setup_parallel()
-
-# Perform grid search with progress
-handlers(global = TRUE)
-handlers("cli")
+# Configure parallel plan for grid search to avoid conflicts
+future::plan(multisession, workers = min(4, parallel::detectCores() - 1))
+handlers("cli")  # Use local CLI handler
 
 tic("Grid Search")
 
 results <- with_progress({
   p <- progressor(steps = nrow(param_grid))
   
-  future_map_dfr(1:nrow(param_grid), function(i) {
+  furrr::future_map_dfr(1:nrow(param_grid), function(i) {
     params <- param_grid[i, ]
-    
-    p(message = sprintf(
-      "Config %d/%d: trees=%d, mtry=%d, nodesize=%d",
-      i, nrow(param_grid), params$num.trees, params$mtry, params$min.node.size
-    ))
-    
-    # 5-fold CV
+    p(message = sprintf("Config %d/%d: trees=%d, mtry=%d, nodesize=%d",
+                        i, nrow(param_grid), params$num.trees, params$mtry, params$min.node.size))
     set.seed(42)
     folds <- createFolds(train_data$pIC50, k = 5)
-    
-    cv_scores <- map_dbl(folds, function(fold_idx) {
+    cv_scores <- purrr::map_dbl(folds, function(fold_idx) {
       train_fold <- train_data[-fold_idx, ] %>% select(pIC50, all_of(feature_cols))
       val_fold <- train_data[fold_idx, ] %>% select(pIC50, all_of(feature_cols))
-      
-      model <- ranger(
-        pIC50 ~ .,
-        data = train_fold,
-        num.trees = params$num.trees,
-        mtry = params$mtry,
-        min.node.size = params$min.node.size,
-        num.threads = 1,
-        verbose = FALSE,
-        save.memory = TRUE
-      )
-      
-      preds <- predict(model, val_fold)$predictions
-      sqrt(mean((val_fold$pIC50 - preds)^2))
+      tryCatch({
+        model <- ranger(
+          pIC50 ~ .,
+          data = train_fold,
+          num.trees = params$num.trees,
+          mtry = params$mtry,
+          min.node.size = params$min.node.size,
+          num.threads = 1,
+          verbose = FALSE,
+          save.memory = TRUE
+        )
+        preds <- predict(model, val_fold)$predictions
+        sqrt(mean((val_fold$pIC50 - preds)^2))
+      }, error = function(e) {
+        cli::cli_alert_warning(sprintf("Error with model c%d: %s", i, e$message))
+        NA
+      })
     })
-    
     data.frame(
       num.trees = params$num.trees,
       mtry = params$mtry,
       min.node.size = params$min.node.size,
-      mean_cv_rmse = mean(cv_scores),
-      sd_cv_rmse = sd(cv_scores)
+      mean_cv_rmse = mean(cv_scores, na.rm = TRUE),
+      sd_cv_rmse = sd(cv_scores, na.rm = TRUE)
     )
   }, .options = furrr_options(seed = TRUE))
 })
 
 toc()
 
-# Find best parameters
+# Reset to sequential plan after parallel grid search
+future::plan(sequential)
+
+# Find best hyperparameters
 best_params <- results %>%
   arrange(mean_cv_rmse) %>%
   slice(1)
@@ -236,24 +232,27 @@ best_params <- results %>%
 cli::cli_alert_success("Best parameters found!")
 print(knitr::kable(best_params, digits = 4, caption = "Best Hyperparameters"))
 
-# Train final model with best parameters
+# Train final model with best params on full dataset, with tryCatch
 cli::cli_alert_info("Training final model with best parameters...")
+tryCatch({
+  cores <- parallel::detectCores() - 1
+  final_rf_model <- ranger(
+    pIC50 ~ .,
+    data = train_data %>% select(pIC50, all_of(feature_cols)),
+    num.trees = best_params$num.trees,
+    mtry = best_params$mtry,
+    min.node.size = best_params$min.node.size,
+    importance = "permutation",
+    num.threads = cores,
+    verbose = TRUE
+  )
+  saveRDS(final_rf_model, "models/final_rf_model_tuned.rds")
+}, error = function(e) {
+  cli::cli_alert_danger(sprintf("Error training final model: %s", e$message))
+})
 
-final_rf_model <- ranger(
-  pIC50 ~ .,
-  data = train_data %>% select(pIC50, all_of(feature_cols)),
-  num.trees = best_params$num.trees,
-  mtry = best_params$mtry,
-  min.node.size = best_params$min.node.size,
-  importance = "permutation",
-  num.threads = cores,
-  verbose = TRUE
-)
-
-# Save tuning results and final model
+# Save tuning results
 write_csv(results, "results/hyperparameter_tuning_results.csv")
-saveRDS(final_rf_model, "models/final_rf_model_tuned.rds")
-
 check_memory("After hyperparameter tuning")
 ```
 
@@ -268,7 +267,6 @@ cli::cli_h2("Training XGBoost Model")
 # Load data
 train_data <- read_csv("data/train_data.csv")
 test_data <- read_csv("data/test_data.csv")
-
 feature_cols <- setdiff(names(train_data), c("molecule_chembl_id", "pIC50", "bioactivity_class"))
 
 # Prepare matrices
@@ -276,7 +274,6 @@ dtrain <- xgb.DMatrix(
   data = as.matrix(train_data %>% select(all_of(feature_cols))),
   label = train_data$pIC50
 )
-
 dtest <- xgb.DMatrix(
   data = as.matrix(test_data %>% select(all_of(feature_cols))),
   label = test_data$pIC50
@@ -294,33 +291,18 @@ params <- list(
   nthread = parallel::detectCores() - 1
 )
 
-# Train with progress
 cli::cli_alert_info("Training XGBoost model...")
-
-handlers(global = TRUE)
-handlers("cli")
-
 tic("XGBoost Training")
 
-with_progress({
-  p <- progressor(steps = 500)
-  
-  # Custom callback for progress
-  progress_callback <- function(env) {
-    p(message = sprintf("Round %d/500 - RMSE: %.4f", 
-                       env$iteration, env$evaluation_log$train_rmse[env$iteration]))
-  }
-  
-  xgb_model <- xgb.train(
-    params = params,
-    data = dtrain,
-    nrounds = 500,
-    watchlist = list(train = dtrain, test = dtest),
-    early_stopping_rounds = 50,
-    verbose = 0,
-    callbacks = list(progress_callback)
-  )
-})
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 500,
+  watchlist = list(train = dtrain, test = dtest),
+  early_stopping_rounds = 50,
+  verbose = 1,  # Enable built-in progress output
+  print_every_n = 10  # Print every 10 rounds
+)
 
 toc()
 
@@ -348,11 +330,10 @@ cat(glue("
   R²: {round(xgb_r2, 4)}
 "))
 
-# Save model and predictions
 xgb.save(xgb_model, "models/xgboost_model.json")
 write_csv(xgb_metrics, "results/xgb_test_predictions.csv")
-
 check_memory("After XGBoost training")
+
 ```
 
 ## Deep Learning with Torch (GPU Accelerated)
@@ -452,7 +433,7 @@ batch_size <- 64
 
 cli::cli_alert_info(glue("Training on {device}"))
 
-handlers(global = TRUE)
+
 handlers("cli")
 
 tic("Neural Network Training")
@@ -513,8 +494,12 @@ toc()
 # Final predictions
 model$eval()
 with_no_grad({
-  nn_predictions <- model(test_x)$to(device = "cpu")$numpy()[, 1]
+  out <- model(test_x)
+  out_cpu <- out$to(device="cpu")
+  arr <- as_array(out_cpu)
+  nn_predictions <- arr[, 1]
 })
+
 
 # Calculate metrics
 nn_metrics <- data.frame(
@@ -579,9 +564,113 @@ comparison <- bind_rows(
   arrange(RMSE)
 
 print(knitr::kable(comparison, digits = 4, caption = "Model Performance Comparison"))
-
-# Save comparison
 write_csv(comparison, "results/model_comparison.csv")
+
+# --- Plotly Visualizations ---
+
+# 1. Bar Chart: Performance Metrics Comparison
+metrics_long <- comparison %>%
+  pivot_longer(cols = c(MSE, RMSE, MAE, R_squared), 
+               names_to = "Metric", 
+               values_to = "Value")
+
+fig_metrics <- plot_ly(metrics_long, 
+                       x = ~Model, 
+                       y = ~Value, 
+                       color = ~Metric, 
+                       type = "bar",
+                       text = ~round(Value, 4),
+                       textposition = "auto") %>%
+  layout(title = "Model Performance Metrics Comparison",
+         xaxis = list(title = "Model"),
+         yaxis = list(title = "Metric Value"),
+         barmode = "group",
+         hovermode = "closest")
+
+fig_metrics
+
+# 2. Scatter Plot: Actual vs Predicted for All Models (FIXED)
+all_predictions <- bind_rows(
+  rf_pred %>% mutate(Model = "Random Forest"),
+  xgb_pred %>% mutate(Model = "XGBoost"),
+  nn_pred %>% mutate(Model = "Neural Network")
+)
+
+# Calculate perfect prediction line separately
+pred_range <- c(min(all_predictions$Actual, na.rm = TRUE), 
+                max(all_predictions$Actual, na.rm = TRUE))
+
+fig_scatter <- plot_ly() %>%
+  # Add scatter points for each model
+  add_trace(data = all_predictions,
+            x = ~Actual, 
+            y = ~Predicted, 
+            color = ~Model,
+            type = "scatter",
+            mode = "markers",
+            marker = list(size = 8, opacity = 0.7),
+            text = ~paste("Actual:", round(Actual, 2), 
+                         "<br>Predicted:", round(Predicted, 2)),
+            hoverinfo = "text") %>%
+  # Add diagonal perfect prediction line separately
+  add_trace(x = pred_range,
+            y = pred_range,
+            mode = "lines",
+            line = list(color = "black", dash = "dash", width = 2),
+            name = "Perfect Prediction",
+            hoverinfo = "skip") %>%
+  layout(title = "Actual vs Predicted pIC50 (All Models)",
+         xaxis = list(title = "Actual pIC50"),
+         yaxis = list(title = "Predicted pIC50"),
+         hovermode = "closest")
+
+fig_scatter
+
+# 3. Residual Plot (FIXED)
+fig_residuals <- plot_ly() %>%
+  # Add residual points
+  add_trace(data = all_predictions,
+            x = ~Predicted, 
+            y = ~Residuals, 
+            color = ~Model,
+            type = "scatter",
+            mode = "markers",
+            marker = list(size = 8, opacity = 0.7),
+            hoverinfo = "text",
+            text = ~paste("Predicted:", round(Predicted, 2),
+                         "<br>Residual:", round(Residuals, 2))) %>%
+  # Add zero error line separately
+  add_trace(x = range(all_predictions$Predicted, na.rm = TRUE),
+            y = c(0, 0),
+            mode = "lines",
+            line = list(color = "red", dash = "dash", width = 2),
+            name = "Zero Error",
+            hoverinfo = "skip") %>%
+  layout(title = "Residual Plot (All Models)",
+         xaxis = list(title = "Predicted pIC50"),
+         yaxis = list(title = "Residuals"),
+         hovermode = "closest")
+
+fig_residuals
+
+# 4. R-squared Comparison Bar Chart (FIXED)
+fig_r2 <- plot_ly(comparison,
+                   x = ~Model,
+                   y = ~R_squared,
+                   type = "bar",
+                   marker = list(color = c("lightblue", "lightgreen", "coral")),
+                   text = ~round(R_squared, 4),
+                   textposition = "auto",
+                   hoverinfo = "text",
+                   hovertext = ~paste("Model:", Model, 
+                                     "<br>R²:", round(R_squared, 4))) %>%
+  layout(title = "R-squared Comparison Across Models",
+         xaxis = list(title = "Model"),
+         yaxis = list(title = "R²", range = c(0, 1)))
+
+fig_r2
+
+cli::cli_alert_success("Model comparison plots generated!")
 ```
 
 To be continued in Part 3 (Shiny Dashboard)...

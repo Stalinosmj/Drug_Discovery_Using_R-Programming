@@ -22,8 +22,8 @@ if(getRversion() < "4.3.0") {
 }
 #Install Java 21
 # In ~/.Rprofile or Rprofile.site
-Sys.setenv(JAVA_HOME = "C:/Program Files/Java/jdk-17")
-Sys.setenv(PATH = paste(Sys.getenv("PATH"), "C:/Program Files/Java/jdk-17/bin/server", sep = ";"))
+Sys.setenv(JAVA_HOME = "C:/Program Files/Java/jdk-21")
+Sys.setenv(PATH = paste(Sys.getenv("PATH"), "C:/Program Files/Java/jdk-21/bin/server", sep = ";"))
 
 
 # ============================================================================
