@@ -1,0 +1,458 @@
+"1","
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/modeltools_0.2-24.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/DEoptimR_1.1-4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mclust_6.1.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/flexmix_2.3-20.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/prabclus_2.3-4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/diptest_0.77-2.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/robustbase_0.99-6.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/kernlab_0.9-33.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/base64url_1.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/brew_1.0-10.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mvtnorm_1.3-3.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/pracma_2.4.6.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/zoo_1.8-14.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/storr_1.2.6.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/rex_1.2.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/jpeg_0.1-11.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/tiff_0.1-12.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/abind_1.4-8.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/nanonext_1.7.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/PRROC_1.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/clue_0.3-66.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/fpc_2.2-13.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/stabm_1.2.2.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/spacefillr_0.4.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/viridis_0.6.5.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/matrixStats_1.5.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/batchtools_0.9.18.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/tf_0.3.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/redux_1.1.5.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/beeswarm_0.4.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/vipor_0.4.7.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/litedown_0.7.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/prismatic_1.1.2.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/leaflet.providers_2.0.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/zeallot_0.2.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/covr_3.6.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/Metrics_0.1.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/vdiffr_1.0.8.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/torchvision_0.7.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/tfevents_0.0.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/checkmate_2.3.3.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/lgr_0.5.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mirai_2.5.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlbench_2.1-6.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3measures_1.1.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3misc_0.19.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/palmerpenguins_0.1.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/paradox_1.0.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/future.callr_0.10.2.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3data_0.9.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/RhpcBLASctl_0.23-42.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/bbotk_1.7.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3cluster_0.1.11.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3filters_0.9.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3fselect_1.4.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3hyperband_1.0.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3inferr_0.2.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3learners_0.13.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3mbo_0.3.3.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3pipelines_0.9.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3tuning_1.4.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3tuningspaces_0.6.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3viz_0.10.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/miesmuschel_0.0.4-3.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3batchmark_0.2.2.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3benchmark_0.1.7.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3db_0.7.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3fairness_0.4.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3fda_0.3.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3oml_0.11.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3spatial_0.6.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3spatiotempcv_2.3.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3summary_0.1.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/rush_0.4.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/profmem_0.7.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/ggbeeswarm_0.7.2.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/ggplot2movies_0.0.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/bigD_0.3.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/bitops_1.0-9.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/juicyjuice_0.1.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/markdown_2.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/katex_1.5.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/paletteer_1.6.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/rsvg_2.7.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/reactR_0.6.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/leaflet_2.2.3.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/tippy_0.1.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/V8_8.0.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/luz_0.5.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3_1.2.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/mlr3verse_0.3.1.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/bench_1.1.4.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/ggridges_0.5.7.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/pheatmap_1.0.13.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/ggsci_4.1.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/gt_1.1.0.zip'
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/reactable_0.4.4.zip'
+"
+"1","package ‘modeltools’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘DEoptimR’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mclust’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘flexmix’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘prabclus’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘diptest’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘robustbase’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘kernlab’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘base64url’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘brew’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mvtnorm’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘pracma’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘zoo’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘storr’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘rex’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘jpeg’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘tiff’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘abind’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘nanonext’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘PRROC’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘clue’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘fpc’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘stabm’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘spacefillr’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘viridis’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘matrixStats’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘batchtools’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘tf’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘redux’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘beeswarm’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘vipor’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘litedown’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘prismatic’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘leaflet.providers’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘zeallot’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘covr’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘Metrics’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘vdiffr’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘torchvision’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘tfevents’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘checkmate’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘lgr’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mirai’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlbench’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3measures’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3misc’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘palmerpenguins’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘paradox’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘future.callr’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3data’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘RhpcBLASctl’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘bbotk’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3cluster’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3filters’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3fselect’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3hyperband’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3inferr’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3learners’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3mbo’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3pipelines’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3tuning’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3tuningspaces’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3viz’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘miesmuschel’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3batchmark’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3benchmark’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3db’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3fairness’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3fda’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3oml’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3spatial’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3spatiotempcv’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3summary’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘rush’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘profmem’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘ggbeeswarm’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘ggplot2movies’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘bigD’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘bitops’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘juicyjuice’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘markdown’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘katex’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘paletteer’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘rsvg’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘reactR’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘leaflet’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘tippy’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘V8’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘luz’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mlr3verse’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘bench’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘ggridges’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘pheatmap’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘ggsci’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘gt’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘reactable’ successfully unpacked and MD5 sums checked
+"
+"1","
+"
+"1",""
+"1","The downloaded binary packages are in
+	C:\Users\stali\AppData\Local\Temp\RtmpCsPGyB\downloaded_packages"
+"1",""
+"1","
+"
+"2","trying URL 'https://cran.rstudio.com/src/contrib/mlr3torch_0.3.1.tar.gz'
+"
+"2","Content type 'application/x-gzip'"
+"2"," length 1063456 bytes (1.0 MB)
+"
+"2","downloaded 1.0 MB
+
+"
+"1","* installing *source* package 'mlr3torch' ...
+"
+"1","** this is package 'mlr3torch' version '0.3.1'
+"
+"1","** package 'mlr3torch' successfully unpacked and MD5 sums checked
+"
+"1","** using staged installation
+"
+"1","** R
+"
+"1","** inst
+"
+"1","** byte-compile and prepare package for lazy loading
+"
+"1","** help
+"
+"1","*** installing help indices
+"
+"1","*** copying figures
+"
+"1","** building package indices
+"
+"1","** testing if installed package can be loaded from temporary location
+"
+"1","** testing if installed package can be loaded from final location
+"
+"1","** testing if installed package keeps a record of temporary installation path
+"
+"1","* DONE (mlr3torch)
+"
+"2","
+"
+"2",""
+"2","The downloaded source packages are in
+	‘C:\Users\stali\AppData\Local\Temp\RtmpCsPGyB\downloaded_packages’"
+"2",""
+"2","
+"
+"0","# Bioconductor packages"
+"0","if (!requireNamespace(""BiocManager"", quietly = TRUE)) {"
+"0","  install.packages(""BiocManager"")"
+"0","}"
+"0",""
+"0","bioc_packages <- c(""ChemmineR"", ""ChemmineOB"")"
+"0","BiocManager::install(bioc_packages[!(bioc_packages %in% installed.packages()[,""Package""])])"
+"1","
+"
+"1",""
+"1","  There is a binary version available but the source version is later"
+"1",""
+"1",":
+"

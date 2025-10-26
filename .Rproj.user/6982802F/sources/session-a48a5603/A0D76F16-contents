@@ -1,0 +1,750 @@
+---
+title: "Bioinformatics Drug Discovery Using Machine Learning"
+subtitle: "An End-to-End R Implementation with GPU Acceleration"
+author: "Drug Discovery Pipeline"
+date: "`r Sys.Date()`"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: show
+    code-tools: true
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+execute:
+  warning: false
+  message: false
+  cache: false
+---
+
+# Setup and Dependencies {#sec-setup}
+
+## System Configuration
+
+```{r setup-system}
+#| label: setup-system
+#| output: false
+
+# Clear environment
+rm(list = ls())
+gc()
+
+# Set options for better performance
+options(
+  scipen = 999,
+  max.print = 100,
+  torch.serialization_version = 2
+)
+
+# Set parallel backend
+Sys.setenv(OMP_NUM_THREADS = parallel::detectCores())
+```
+
+## Package Installation and Loading
+
+```{r install-packages}
+#| label: install-packages
+#| eval: false
+
+# CRAN packages
+required_packages <- c(
+  # Core data manipulation
+  "tidyverse", "data.table", "janitor",
+  
+  # Chemistry and molecular descriptors
+  "rcdk", "rcdklibs", "webchem",
+  
+  # Machine learning - Modern implementations
+  "ranger", "xgboost", "torch", "luz",
+  "caret", "mlr3", "mlr3verse",
+  
+  # Parallel processing and progress
+  "future", "future.apply", "furrr", "progressr",
+  "doParallel", "foreach",
+  
+  # Memory and resource monitoring
+  "memuse", "pryr", "bench",
+  
+  # API and web scraping
+  "httr", "jsonlite", "rvest", "xml2",
+  
+  # Visualization
+  "ggplot2", "plotly", "patchwork", "ggridges",
+  "corrplot", "pheatmap", "ggsci",
+  
+  # Dashboard
+  "shiny", "shinydashboard", "shinyWidgets", "shinycssloaders",
+  "DT", "fresh", "bslib",
+  
+  # Reporting and tables
+  "knitr", "kableExtra", "gt", "reactable",
+  
+  # Utilities
+  "tictoc", "lobstr", "cli", "glue"
+)
+
+# Install missing packages
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) {
+  install.packages(new_packages, dependencies = TRUE)
+}
+
+# Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+bioc_packages <- c("ChemmineR", "ChemmineOB")
+BiocManager::install(bioc_packages[!(bioc_packages %in% installed.packages()[,"Package"])])
+```
+
+```{r load-packages}
+#| label: load-packages
+#| message: false
+#| warning: false
+
+# Load all required packages
+suppressPackageStartupMessages({
+  # Core
+  library(tidyverse)
+  library(data.table)
+  
+  # Chemistry
+  library(rcdk)
+  library(webchem)
+  
+  # ML
+  library(ranger)
+  library(xgboost)
+  library(torch)
+  library(caret)
+  
+  # Parallel & Progress
+  library(future)
+  library(future.apply)
+  library(furrr)
+  library(progressr)
+  library(doParallel)
+  
+  # Memory monitoring
+  library(memuse)
+  library(pryr)
+  
+  # API
+  library(httr)
+  library(jsonlite)
+  
+  # Visualization
+  library(ggplot2)
+  library(plotly)
+  library(patchwork)
+  library(corrplot)
+  
+  # Dashboard
+  library(shiny)
+  library(shinydashboard)
+  library(DT)
+  
+  # Utilities
+  library(tictoc)
+  library(cli)
+  library(glue)
+})
+
+cat(cli::col_green("✓ All packages loaded successfully!\n"))
+```
+
+## Helper Functions
+
+```{r helper-functions}
+#| label: helper-functions
+
+# Progress bar wrapper with time estimation
+with_progress_bar <- function(expr, message = "Processing", steps = 100) {
+  p <- progressr::progressor(steps = steps)
+  
+  result <- withVisible(expr)
+  
+  if(result$visible) result$value else invisible(result$value)
+}
+
+# Memory usage tracker
+check_memory <- function(label = "") {
+  mem_info <- Sys.meminfo()
+  proc_mem <- Sys.procmem()
+  
+  cat(cli::rule(glue("Memory Status: {label}")), "\n")
+  cat(glue("  Available RAM: {mem_info$freeram}\n"))
+  cat(glue("  Process Usage: {proc_mem}\n"))
+  cat(glue("  % Used: {round((1 - as.numeric(mem_info$freeram) / as.numeric(mem_info$totalram)) * 100, 2)}%\n"))
+  cat(cli::rule(), "\n")
+  
+  invisible(list(available = mem_info$freeram, used = proc_mem))
+}
+
+# GPU availability checker
+check_gpu <- function() {
+  if(torch::cuda_is_available()) {
+    cat(cli::col_green("✓ CUDA GPU available!\n"))
+    system("nvidia-smi", intern = TRUE)
+    return(TRUE)
+  } else {
+    cat(cli::col_yellow("⚠ No CUDA GPU detected. Using CPU.\n"))
+    return(FALSE)
+  }
+}
+
+# Time estimation wrapper
+time_step <- function(expr, step_name = "Step") {
+  cli::cli_alert_info(glue("Starting: {step_name}"))
+  start_time <- Sys.time()
+  
+  result <- expr
+  
+  end_time <- Sys.time()
+  duration <- difftime(end_time, start_time, units = "auto")
+  
+  cli::cli_alert_success(glue("Completed: {step_name} in {round(duration, 2)} {attr(duration, 'units')}"))
+  
+  return(result)
+}
+
+# Safe parallel setup
+setup_parallel <- function(cores = NULL) {
+  if(is.null(cores)) {
+    cores <- max(1, parallel::detectCores() - 1)
+  }
+  
+  # Check if running in RStudio (which doesn't support multicore)
+  if(Sys.getenv("RSTUDIO") == "1") {
+    plan(multisession, workers = cores)
+    cat(glue("Parallel backend: multisession with {cores} workers\n"))
+  } else {
+    plan(multicore, workers = cores)
+    cat(glue("Parallel backend: multicore with {cores} workers\n"))
+  }
+  
+  return(cores)
+}
+
+cat(cli::col_green("✓ Helper functions defined!\n"))
+```
+
+## System Information
+
+```{r system-info}
+#| label: system-info
+
+cat(cli::rule("System Information"), "\n")
+cat(glue("R Version: {R.version.string}\n"))
+cat(glue("Platform: {R.version$platform}\n"))
+cat(glue("CPU Cores: {parallel::detectCores()}\n"))
+
+check_memory("Initial")
+gpu_available <- check_gpu()
+
+cat(cli::rule(), "\n")
+```
+
+# Data Collection from ChEMBL {#sec-data-collection}
+
+## ChEMBL API Functions
+
+```{r chembl-functions}
+#| label: chembl-functions
+
+# Function to fetch bioactivity data from ChEMBL
+fetch_chembl_bioactivity <- function(target_chembl_id, 
+                                     max_compounds = 5000,
+                                     activity_type = "IC50") {
+  
+  cli::cli_h2("Fetching ChEMBL Bioactivity Data")
+  
+  base_url <- "https://www.ebi.ac.uk/chembl/api/data/activity.json"
+  
+  all_activities <- list()
+  offset <- 0
+  limit <- 1000
+  
+  # Progress setup
+  handlers("cli")
+  
+  with_progress({
+    p <- progressor(steps = ceiling(max_compounds / limit))
+    
+    repeat {
+      # API call with rate limiting
+      Sys.sleep(0.5)  # Respect API rate limits
+      
+      response <- tryCatch({
+        GET(
+          base_url,
+          query = list(
+            target_chembl_id = target_chembl_id,
+            standard_type = activity_type,
+            limit = limit,
+            offset = offset
+          ),
+          timeout(30)
+        )
+      }, error = function(e) {
+        cli::cli_alert_danger(glue("API error: {e$message}"))
+        return(NULL)
+      })
+      
+      if(is.null(response) || status_code(response) != 200) {
+        cli::cli_alert_warning("Failed to fetch data or end of results")
+        break
+      }
+      
+      # Parse response
+      data <- fromJSON(content(response, "text", encoding = "UTF-8"))
+      
+      if(length(data$activities) == 0) break
+      
+      all_activities[[length(all_activities) + 1]] <- data$activities
+      
+      p(message = sprintf("Fetched %d compounds", offset + nrow(data$activities)))
+      
+      offset <- offset + limit
+      
+      if(offset >= max_compounds || length(data$activities) < limit) break
+    }
+  })
+  
+  # Combine all results
+  if(length(all_activities) > 0) {
+    final_data <- bind_rows(all_activities)
+    cli::cli_alert_success(glue("Retrieved {nrow(final_data)} bioactivity records"))
+    return(final_data)
+  } else {
+    cli::cli_alert_danger("No data retrieved")
+    return(NULL)
+  }
+}
+
+# Search for target ChEMBL ID
+search_chembl_target <- function(target_name) {
+  cli::cli_h3("Searching for target")
+  
+  base_url <- "https://www.ebi.ac.uk/chembl/api/data/target/search.json"
+  
+  response <- GET(
+    base_url,
+    query = list(
+      q = target_name,
+      limit = 10
+    )
+  )
+  
+  if(status_code(response) == 200) {
+    data <- fromJSON(content(response, "text"))
+    
+    if(length(data$targets) > 0) {
+      targets_df <- data$targets %>%
+        select(target_chembl_id, pref_name, target_type, organism) %>%
+        head(10)
+      
+      print(knitr::kable(targets_df, caption = "Available Targets"))
+      return(targets_df)
+    }
+  }
+  
+  cli::cli_alert_warning("No targets found")
+  return(NULL)
+}
+
+cat(cli::col_green("✓ ChEMBL API functions defined!\n"))
+```
+
+## Fetch SARS-CoV-2 Data
+
+```{r fetch-data}
+#| label: fetch-data
+#| eval: false
+
+# Search for SARS-CoV-2 3CL protease
+targets <- search_chembl_target("SARS coronavirus 3C-like proteinase")
+
+# Use the appropriate ChEMBL ID (adjust based on search results)
+# For SARS-CoV-2 main protease: CHEMBL3927 or CHEMBL6166
+target_id <- "CHEMBL3927"
+
+# Fetch bioactivity data
+bioactivity_raw <- time_step(
+  fetch_chembl_bioactivity(
+    target_chembl_id = target_id,
+    max_compounds = 3000,
+    activity_type = "IC50"
+  ),
+  "Data Collection from ChEMBL"
+)
+
+# Save raw data
+if(!is.null(bioactivity_raw)) {
+  bioactivity_flat <- bioactivity_raw %>%
+  select(where(~ is.atomic(.x) && !is.matrix(.x)))
+write_csv(bioactivity_flat, "data/bioactivity_raw.csv")
+
+}
+```
+
+## Data Preprocessing
+
+```{r preprocess-data}
+#| label: preprocess-data
+#| eval: false
+
+cli::cli_h2("Data Preprocessing")
+
+# Load data if not in environment
+if(!exists("bioactivity_raw")) {
+  bioactivity_raw <- read_csv("data/bioactivity_raw.csv")
+}
+str(bioactivity_raw$standard_value)
+bioactivity_raw <- bioactivity_raw %>%
+  mutate(standard_value = suppressWarnings(as.numeric(standard_value)))
+
+# Preprocess bioactivity data
+bioactivity_clean <- bioactivity_raw %>%
+  filter(
+    standard_type == "IC50",
+    !is.na(standard_value),
+    !is.na(canonical_smiles),
+    standard_value > 0,
+    standard_units == "nM"
+  ) %>%
+  mutate(
+    # Convert IC50 (nM) to pIC50
+    pIC50 = -log10(standard_value * 1e-9),
+    
+    # Classify activity
+    bioactivity_class = case_when(
+      pIC50 >= 7 ~ "Highly Active",  # IC50 <= 100 nM
+      pIC50 >= 6 ~ "Active",         # IC50 <= 1 µM
+      pIC50 >= 5 ~ "Moderately Active", # IC50 <= 10 µM
+      TRUE ~ "Inactive"
+    )
+  ) %>%
+  # Remove duplicates, keep median pIC50
+  group_by(molecule_chembl_id, canonical_smiles) %>%
+  summarise(
+    pIC50 = median(pIC50, na.rm = TRUE),
+    standard_value_median = median(standard_value, na.rm = TRUE),
+    bioactivity_class = first(bioactivity_class),
+    n_measurements = n(),
+    .groups = "drop"
+  ) %>%
+  filter(pIC50 >= 4) %>%  # Focus on compounds with some activity
+  arrange(desc(pIC50))
+
+cli::cli_alert_success(glue("Cleaned data: {nrow(bioactivity_clean)} unique compounds"))
+
+# Save cleaned data
+write_csv(bioactivity_clean, "data/bioactivity_clean.csv")
+
+# Summary statistics
+bioactivity_clean %>%
+  group_by(bioactivity_class) %>%
+  summarise(
+    Count = n(),
+    Mean_pIC50 = mean(pIC50),
+    Median_pIC50 = median(pIC50),
+    SD_pIC50 = sd(pIC50)
+  ) %>%
+  knitr::kable(
+    caption = "Bioactivity Distribution",
+    digits = 2
+  )
+```
+
+# Molecular Descriptors Calculation {#sec-descriptors}
+
+## Lipinski Descriptors
+
+```{r lipinski-functions}
+#| label: lipinski-functions
+
+# Calculate Lipinski descriptors using rcdk
+calculate_lipinski_descriptors <- function(smiles_vector) {
+  cli::cli_h2("Calculating Lipinski Descriptors (serial mode)")
+
+  # Parse SMILES
+  cli::cli_alert_info("Parsing SMILES structures...")
+
+  molecules <- purrr::map(smiles_vector, function(smi) {
+    tryCatch({
+      parse.smiles(smi)[[1]]
+    }, error = function(e) NULL)
+  })
+
+  # Set up a progress bar
+  total <- length(molecules)
+  pb <- txtProgressBar(min = 0, max = total, style = 3)
+
+  # Calculate descriptors serially
+  lipinski_data <- purrr::map_dfr(seq_along(molecules), function(i) {
+    setTxtProgressBar(pb, i)
+    mol <- molecules[[i]]
+    if (is.null(mol)) {
+      return(data.frame(
+        idx = i,
+        MW = NA, LogP = NA, HBD = NA, HBA = NA,
+        TPSA = NA, nRotB = NA, nAtoms = NA
+      ))
+    }
+    tryCatch({
+      mw <- get.mol2formula(mol)@mass
+      logP <- eval.desc(mol, "org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor")[[1]]
+      hbd <- eval.desc(mol, "org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor")[[1]]
+      hba <- eval.desc(mol, "org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor")[[1]]
+      tpsa <- eval.desc(mol, "org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor")[[1]]
+      nrotb <- eval.desc(mol, "org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor")[[1]]
+      natoms <- get.atom.count(mol)
+      data.frame(
+        idx = i,
+        MW = mw,
+        LogP = logP,
+        HBD = hbd,
+        HBA = hba,
+        TPSA = tpsa,
+        nRotB = nrotb,
+        nAtoms = natoms
+      )
+    }, error = function(e) {
+      data.frame(
+        idx = i,
+        MW = NA, LogP = NA, HBD = NA, HBA = NA,
+        TPSA = NA, nRotB = NA, nAtoms = NA
+      )
+    })
+  })
+  close(pb)
+  cli::cli_alert_success("Descriptor calculation complete!")
+  return(lipinski_data)
+}
+
+cat(cli::col_green("✓ Lipinski descriptor functions defined!\n"))
+
+```
+
+## Extended Molecular Fingerprints
+
+```{r fingerprint-functions}
+#| label: fingerprint-functions
+
+# Calculate molecular fingerprints
+calculate_fingerprints <- function(smiles_vector, fp_type = "extended", size = 1024) {
+  
+  cli::cli_h2(glue("Calculating {fp_type} Fingerprints (size={size})"))
+  
+  # Parse SMILES
+  molecules <- future_map(smiles_vector, function(smi) {
+    tryCatch({
+      parse.smiles(smi)[[1]]
+    }, error = function(e) NULL)
+  }, .progress = TRUE)
+  
+  # Calculate fingerprints
+  cli::cli_alert_info("Computing fingerprints...")
+  
+ fp_matrix <- with_progress({
+  p <- progressor(along = molecules)
+  
+  future_map(seq_along(molecules), function(i) {
+    mol <- molecules[[i]]
+    p(message = sprintf("Fingerprint %d/%d", i, length(molecules)))
+    
+    if (is.null(mol)) {
+      return(as.data.frame(t(rep(0, size))))  # Return data frame row
+    }
+    
+    tryCatch({
+      fp <- get.fingerprint(mol, type = fp_type, fp.mode = "bit", size = size)
+      fp_vec <- numeric(size)
+      if (length(fp@bits) > 0) {
+        fp_vec[fp@bits] <- 1
+      }
+      as.data.frame(t(fp_vec))  # Convert numeric vector -> 1-row data frame
+    }, error = function(e) {
+      as.data.frame(t(rep(0, size)))  # Safe fallback as 1-row data frame
+    })
+  }, .options = furrr_options(seed = TRUE))
+}) %>% bind_rows()
+
+  
+  colnames(fp_matrix) <- paste0("FP", 1:size)
+  
+  cli::cli_alert_success(glue("Generated {ncol(fp_matrix)} fingerprint features"))
+  
+  return(as.data.frame(fp_matrix))
+}
+
+cat(cli::col_green("✓ Fingerprint functions defined!\n"))
+```
+
+## Calculate All Descriptors
+
+```{r calculate-descriptors}
+#| label: calculate-descriptors
+#| eval: false
+
+# Load clean data
+bioactivity_clean <- read_csv("data/bioactivity_clean.csv")
+
+check_memory("Before descriptor calculation")
+
+# Calculate Lipinski descriptors
+lipinski_descriptors <- time_step(
+  calculate_lipinski_descriptors(bioactivity_clean$canonical_smiles),
+  "Lipinski Descriptor Calculation"
+)
+
+# Calculate molecular fingerprints
+molecular_fingerprints <- time_step(
+  calculate_fingerprints(
+    bioactivity_clean$canonical_smiles,
+    fp_type = "extended",
+    size = 1024
+  ),
+  "Molecular Fingerprint Calculation"
+)
+
+# Combine all features
+full_dataset <- bind_cols(
+  bioactivity_clean,
+  lipinski_descriptors %>% select(-idx),
+  molecular_fingerprints
+)
+
+# Apply Lipinski's Rule of Five
+full_dataset <- full_dataset %>%
+  mutate(
+    lipinski_violations = 
+      (MW > 500) + 
+      (LogP > 5) + 
+      (HBD > 5) + 
+      (HBA > 10),
+    druglike = lipinski_violations <= 1
+  )
+
+# Remove low variance features
+cli::cli_alert_info("Removing low-variance features...")
+fp_cols <- grep("^FP", names(full_dataset), value = TRUE)
+variance_check <- full_dataset %>%
+  select(all_of(fp_cols)) %>%
+  summarise(across(everything(), var, na.rm = TRUE))
+
+low_var_cols <- names(variance_check)[variance_check[1,] < 0.01]
+full_dataset <- full_dataset %>% select(-any_of(low_var_cols))
+
+cli::cli_alert_success(glue("Removed {length(low_var_cols)} low-variance features"))
+
+# Save complete dataset
+write_csv(full_dataset, "data/full_dataset_with_descriptors.csv")
+cli::cli_alert_success("Complete dataset saved!")
+
+check_memory("After descriptor calculation")
+```
+
+# Data Visualization {#sec-visualization}
+
+## Chemical Space Analysis
+
+```{r visualize-chemical-space}
+#| label: visualize-chemical-space
+#| eval: false
+#| fig-width: 12
+#| fig-height: 8
+
+# Load full dataset
+full_dataset <- read_csv("data/full_dataset_with_descriptors.csv")
+
+# Chemical space plot
+p1 <- ggplot(full_dataset, aes(x = MW, y = LogP, color = bioactivity_class)) +
+  geom_point(alpha = 0.6, size = 2.5) +
+  geom_hline(yintercept = 5, linetype = "dashed", color = "red", linewidth = 0.8) +
+  geom_vline(xintercept = 500, linetype = "dashed", color = "red", linewidth = 0.8) +
+  scale_color_manual(
+    values = c(
+      "Highly Active" = "#e41a1c",
+      "Active" = "#377eb8",
+      "Moderately Active" = "#4daf4a",
+      "Inactive" = "#999999"
+    )
+  ) +
+  labs(
+    title = "Chemical Space Analysis - Lipinski Descriptors",
+    subtitle = "Molecular Weight vs LogP with Lipinski thresholds",
+    x = "Molecular Weight (Da)",
+    y = "LogP (Lipophilicity)",
+    color = "Bioactivity Class"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 16)
+  )
+
+# TPSA vs LogP
+p2 <- ggplot(full_dataset, aes(x = TPSA, y = LogP, color = pIC50)) +
+  geom_point(alpha = 0.6, size = 2.5) +
+  scale_color_viridis_c(option = "plasma") +
+  labs(
+    title = "Polar Surface Area vs Lipophilicity",
+    x = "TPSA (Ų)",
+    y = "LogP",
+    color = "pIC50"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+
+# Combine plots
+combined_plot <- p1 / p2 +
+  plot_annotation(
+    title = "Bioinformatics Drug Discovery - Chemical Space Exploration",
+    theme = theme(plot.title = element_text(face = "bold", size = 18))
+  )
+
+print(combined_plot)
+ggsave("plots/chemical_space_analysis.png", combined_plot, width = 12, height = 10, dpi = 300)
+```
+
+## Bioactivity Distribution
+
+```{r visualize-bioactivity}
+#| label: visualize-bioactivity  
+#| eval: false
+#| fig-width: 10
+#| fig-height: 6
+
+# pIC50 distribution
+p_dist <- ggplot(full_dataset, aes(x = pIC50, fill = bioactivity_class)) +
+  geom_histogram(bins = 50, alpha = 0.7, color = "black") +
+  scale_fill_manual(
+    values = c(
+      "Highly Active" = "#e41a1c",
+      "Active" = "#377eb8",
+      "Moderately Active" = "#4daf4a",
+      "Inactive" = "#999999"
+    )
+  ) +
+  labs(
+    title = "Distribution of Bioactivity (pIC50)",
+    x = "pIC50",
+    y = "Count",
+    fill = "Bioactivity Class"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 16)
+  )
+
+print(p_dist)
+ggsave("plots/bioactivity_distribution.png", p_dist, width = 10, height = 6, dpi = 300)
+```
+
+To be continued in Part 2...

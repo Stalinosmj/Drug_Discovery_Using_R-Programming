@@ -1,0 +1,1 @@
+{"entries":[{"caption":"Machine Learning Pipeline","key":"sec-ml-pipeline","order":{"number":1,"section":[1,0,0,0,0,0,0]}}],"headings":["sec-ml-pipeline","data-preparation","random-forest-with-ranger","hyperparameter-tuning-with-grid-search","xgboost-model","deep-learning-with-torch-gpu-accelerated","model-comparison"]}

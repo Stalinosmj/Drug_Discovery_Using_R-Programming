@@ -1,0 +1,5 @@
+"0","#| label: fetch-data"
+"0","#| eval: false"
+"0",""
+"0","# Search for SARS-CoV-2 3CL protease"
+"0","targets <- search_chembl_target(""SARS coronavirus 3C-like proteinase"")"
