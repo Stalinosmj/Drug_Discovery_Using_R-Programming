@@ -2498,7 +2498,7 @@ vertical-align: -.125em;
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>── Memory Status: Initial ────────────────────────────────────────────────────── 
-Available RAM: 15.712 GiBProcess Usage: new(&quot;memuse&quot;, size = 686.6484375, unit = &quot;MiB&quot;, unit.prefix = &quot;IEC&quot;, unit.names = &quot;short&quot;) Process Usage: new(&quot;memuse&quot;, size = 762.47265625, unit = &quot;MiB&quot;, unit.prefix = &quot;IEC&quot;, unit.names = &quot;short&quot;)% Used: 50.35%──────────────────────────────────────────────────────────────────────────────── </code></pre>
+Available RAM: 15.002 GiBProcess Usage: new(&quot;memuse&quot;, size = 691.6484375, unit = &quot;MiB&quot;, unit.prefix = &quot;IEC&quot;, unit.names = &quot;short&quot;) Process Usage: new(&quot;memuse&quot;, size = 771.484375, unit = &quot;MiB&quot;, unit.prefix = &quot;IEC&quot;, unit.names = &quot;short&quot;)% Used: 52.59%──────────────────────────────────────────────────────────────────────────────── </code></pre>
 </div>
 <details open class="code-fold">
 <summary>Code</summary>
@@ -2743,91 +2743,64 @@ Available RAM: 15.712 GiBProcess Usage: new(&quot;memuse&quot;, size = 686.64843
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Lipinski descriptors using rcdk</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>calculate_lipinski_descriptors <span class="ot">&lt;-</span> <span class="cf">function</span>(smiles_vector) {</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_h2</span>(<span class="st">&quot;Calculating Lipinski Descriptors&quot;</span>)</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Setup parallel processing</span></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  cores <span class="ot">&lt;-</span> <span class="fu">setup_parallel</span>()</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Parse SMILES</span></span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Parsing SMILES structures...&quot;</span>)</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  molecules <span class="ot">&lt;-</span> <span class="fu">future_map</span>(smiles_vector, <span class="cf">function</span>(smi) {</span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">parse.smiles</span>(smi)[[<span class="dv">1</span>]]</span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span>)</span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">.progress =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate descriptors</span></span>
-<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Computing molecular descriptors...&quot;</span>)</span>
-<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">handlers</span>(<span class="st">&quot;cli&quot;</span>)</span>
-<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>  lipinski_data <span class="ot">&lt;-</span> <span class="fu">with_progress</span>({</span>
-<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">progressor</span>(<span class="at">along =</span> molecules)</span>
-<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">future_map_dfr</span>(<span class="fu">seq_along</span>(molecules), <span class="cf">function</span>(i) {</span>
-<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>      mol <span class="ot">&lt;-</span> molecules[[i]]</span>
-<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>      <span class="fu">p</span>(<span class="at">message =</span> <span class="fu">sprintf</span>(<span class="st">&quot;Processing molecule %d/%d&quot;</span>, i, <span class="fu">length</span>(molecules)))</span>
-<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>      </span>
-<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span>(<span class="fu">is.null</span>(mol)) {</span>
-<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">data.frame</span>(</span>
-<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>          <span class="at">idx =</span> i,</span>
-<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>          <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
-<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a>          <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
-<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a>        ))</span>
-<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a>      }</span>
-<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a>      </span>
-<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tryCatch</span>({</span>
-<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Molecular weight</span></span>
-<span id="cb25-41"><a href="#cb25-41" aria-hidden="true" tabindex="-1"></a>        mw <span class="ot">&lt;-</span> <span class="fu">get.mol2formula</span>(mol)<span class="sc">@</span>mass</span>
-<span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb25-43"><a href="#cb25-43" aria-hidden="true" tabindex="-1"></a>        <span class="co"># LogP (XLogP)</span></span>
-<span id="cb25-44"><a href="#cb25-44" aria-hidden="true" tabindex="-1"></a>        xlogp_desc <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor&quot;</span>)</span>
-<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a>        logP <span class="ot">&lt;-</span> xlogp_desc[[<span class="dv">1</span>]]</span>
-<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb25-47"><a href="#cb25-47" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Hydrogen bond donors</span></span>
-<span id="cb25-48"><a href="#cb25-48" aria-hidden="true" tabindex="-1"></a>        hbd <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb25-49"><a href="#cb25-49" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb25-50"><a href="#cb25-50" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Hydrogen bond acceptors  </span></span>
-<span id="cb25-51"><a href="#cb25-51" aria-hidden="true" tabindex="-1"></a>        hba <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb25-52"><a href="#cb25-52" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb25-53"><a href="#cb25-53" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Topological polar surface area</span></span>
-<span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a>        tpsa <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb25-56"><a href="#cb25-56" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Rotatable bonds</span></span>
-<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a>        nrotb <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb25-58"><a href="#cb25-58" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb25-59"><a href="#cb25-59" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Atom count</span></span>
-<span id="cb25-60"><a href="#cb25-60" aria-hidden="true" tabindex="-1"></a>        natoms <span class="ot">&lt;-</span> <span class="fu">get.atom.count</span>(mol)</span>
-<span id="cb25-61"><a href="#cb25-61" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb25-62"><a href="#cb25-62" aria-hidden="true" tabindex="-1"></a>        <span class="fu">data.frame</span>(</span>
-<span id="cb25-63"><a href="#cb25-63" aria-hidden="true" tabindex="-1"></a>          <span class="at">idx =</span> i,</span>
-<span id="cb25-64"><a href="#cb25-64" aria-hidden="true" tabindex="-1"></a>          <span class="at">MW =</span> mw,</span>
-<span id="cb25-65"><a href="#cb25-65" aria-hidden="true" tabindex="-1"></a>          <span class="at">LogP =</span> logP,</span>
-<span id="cb25-66"><a href="#cb25-66" aria-hidden="true" tabindex="-1"></a>          <span class="at">HBD =</span> hbd,</span>
-<span id="cb25-67"><a href="#cb25-67" aria-hidden="true" tabindex="-1"></a>          <span class="at">HBA =</span> hba,</span>
-<span id="cb25-68"><a href="#cb25-68" aria-hidden="true" tabindex="-1"></a>          <span class="at">TPSA =</span> tpsa,</span>
-<span id="cb25-69"><a href="#cb25-69" aria-hidden="true" tabindex="-1"></a>          <span class="at">nRotB =</span> nrotb,</span>
-<span id="cb25-70"><a href="#cb25-70" aria-hidden="true" tabindex="-1"></a>          <span class="at">nAtoms =</span> natoms</span>
-<span id="cb25-71"><a href="#cb25-71" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb25-72"><a href="#cb25-72" aria-hidden="true" tabindex="-1"></a>      }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
-<span id="cb25-73"><a href="#cb25-73" aria-hidden="true" tabindex="-1"></a>        <span class="fu">data.frame</span>(</span>
-<span id="cb25-74"><a href="#cb25-74" aria-hidden="true" tabindex="-1"></a>          <span class="at">idx =</span> i,</span>
-<span id="cb25-75"><a href="#cb25-75" aria-hidden="true" tabindex="-1"></a>          <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
-<span id="cb25-76"><a href="#cb25-76" aria-hidden="true" tabindex="-1"></a>          <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
-<span id="cb25-77"><a href="#cb25-77" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb25-78"><a href="#cb25-78" aria-hidden="true" tabindex="-1"></a>      })</span>
-<span id="cb25-79"><a href="#cb25-79" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">.options =</span> <span class="fu">furrr_options</span>(<span class="at">seed =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb25-80"><a href="#cb25-80" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb25-81"><a href="#cb25-81" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-82"><a href="#cb25-82" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="st">&quot;Descriptor calculation complete!&quot;</span>)</span>
-<span id="cb25-83"><a href="#cb25-83" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-84"><a href="#cb25-84" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(lipinski_data)</span>
-<span id="cb25-85"><a href="#cb25-85" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb25-86"><a href="#cb25-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-87"><a href="#cb25-87" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(cli<span class="sc">::</span><span class="fu">col_green</span>(<span class="st">&quot;✓ Lipinski descriptor functions defined!</span><span class="sc">\n</span><span class="st">&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_h2</span>(<span class="st">&quot;Calculating Lipinski Descriptors (serial mode)&quot;</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Parse SMILES</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Parsing SMILES structures...&quot;</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  molecules <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map</span>(smiles_vector, <span class="cf">function</span>(smi) {</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">parse.smiles</span>(smi)[[<span class="dv">1</span>]]</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span>)</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Set up a progress bar</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  total <span class="ot">&lt;-</span> <span class="fu">length</span>(molecules)</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>  pb <span class="ot">&lt;-</span> <span class="fu">txtProgressBar</span>(<span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> total, <span class="at">style =</span> <span class="dv">3</span>)</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate descriptors serially</span></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>  lipinski_data <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(<span class="fu">seq_along</span>(molecules), <span class="cf">function</span>(i) {</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setTxtProgressBar</span>(pb, i)</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    mol <span class="ot">&lt;-</span> molecules[[i]]</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(mol)) {</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(<span class="fu">data.frame</span>(</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>        <span class="at">idx =</span> i,</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>        <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>        <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>      ))</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>      mw <span class="ot">&lt;-</span> <span class="fu">get.mol2formula</span>(mol)<span class="sc">@</span>mass</span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>      logP <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>      hbd <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>      hba <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>      tpsa <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a>      nrotb <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a>      natoms <span class="ot">&lt;-</span> <span class="fu">get.atom.count</span>(mol)</span>
+<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a>      <span class="fu">data.frame</span>(</span>
+<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a>        <span class="at">idx =</span> i,</span>
+<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a>        <span class="at">MW =</span> mw,</span>
+<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a>        <span class="at">LogP =</span> logP,</span>
+<span id="cb25-41"><a href="#cb25-41" aria-hidden="true" tabindex="-1"></a>        <span class="at">HBD =</span> hbd,</span>
+<span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a>        <span class="at">HBA =</span> hba,</span>
+<span id="cb25-43"><a href="#cb25-43" aria-hidden="true" tabindex="-1"></a>        <span class="at">TPSA =</span> tpsa,</span>
+<span id="cb25-44"><a href="#cb25-44" aria-hidden="true" tabindex="-1"></a>        <span class="at">nRotB =</span> nrotb,</span>
+<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a>        <span class="at">nAtoms =</span> natoms</span>
+<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb25-47"><a href="#cb25-47" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
+<span id="cb25-48"><a href="#cb25-48" aria-hidden="true" tabindex="-1"></a>      <span class="fu">data.frame</span>(</span>
+<span id="cb25-49"><a href="#cb25-49" aria-hidden="true" tabindex="-1"></a>        <span class="at">idx =</span> i,</span>
+<span id="cb25-50"><a href="#cb25-50" aria-hidden="true" tabindex="-1"></a>        <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
+<span id="cb25-51"><a href="#cb25-51" aria-hidden="true" tabindex="-1"></a>        <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
+<span id="cb25-52"><a href="#cb25-52" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb25-53"><a href="#cb25-53" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">close</span>(pb)</span>
+<span id="cb25-56"><a href="#cb25-56" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="st">&quot;Descriptor calculation complete!&quot;</span>)</span>
+<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(lipinski_data)</span>
+<span id="cb25-58"><a href="#cb25-58" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb25-59"><a href="#cb25-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-60"><a href="#cb25-60" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(cli<span class="sc">::</span><span class="fu">col_green</span>(<span class="st">&quot;✓ Lipinski descriptor functions defined!</span><span class="sc">\n</span><span class="st">&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>✓ Lipinski descriptor functions defined!</code></pre>
@@ -3980,311 +3953,285 @@ Available RAM: 15.712 GiBProcess Usage: new(&quot;memuse&quot;, size = 686.64843
 <span id="cb32-469"><a href="#cb32-469" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-470"><a href="#cb32-470" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Lipinski descriptors using rcdk</span></span>
 <span id="cb32-471"><a href="#cb32-471" aria-hidden="true" tabindex="-1"></a>calculate_lipinski_descriptors <span class="ot">&lt;-</span> <span class="cf">function</span>(smiles_vector) {</span>
-<span id="cb32-472"><a href="#cb32-472" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-473"><a href="#cb32-473" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_h2</span>(<span class="st">&quot;Calculating Lipinski Descriptors&quot;</span>)</span>
-<span id="cb32-474"><a href="#cb32-474" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-475"><a href="#cb32-475" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Setup parallel processing</span></span>
-<span id="cb32-476"><a href="#cb32-476" aria-hidden="true" tabindex="-1"></a>  cores <span class="ot">&lt;-</span> <span class="fu">setup_parallel</span>()</span>
-<span id="cb32-477"><a href="#cb32-477" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-478"><a href="#cb32-478" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Parse SMILES</span></span>
-<span id="cb32-479"><a href="#cb32-479" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Parsing SMILES structures...&quot;</span>)</span>
-<span id="cb32-480"><a href="#cb32-480" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-481"><a href="#cb32-481" aria-hidden="true" tabindex="-1"></a>  molecules <span class="ot">&lt;-</span> <span class="fu">future_map</span>(smiles_vector, <span class="cf">function</span>(smi) {</span>
-<span id="cb32-482"><a href="#cb32-482" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
-<span id="cb32-483"><a href="#cb32-483" aria-hidden="true" tabindex="-1"></a>      <span class="fu">parse.smiles</span>(smi)[[<span class="dv">1</span>]]</span>
-<span id="cb32-484"><a href="#cb32-484" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span>)</span>
-<span id="cb32-485"><a href="#cb32-485" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">.progress =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb32-486"><a href="#cb32-486" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-487"><a href="#cb32-487" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate descriptors</span></span>
-<span id="cb32-488"><a href="#cb32-488" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Computing molecular descriptors...&quot;</span>)</span>
-<span id="cb32-489"><a href="#cb32-489" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-490"><a href="#cb32-490" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-491"><a href="#cb32-491" aria-hidden="true" tabindex="-1"></a>  <span class="fu">handlers</span>(<span class="st">&quot;cli&quot;</span>)</span>
-<span id="cb32-492"><a href="#cb32-492" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-493"><a href="#cb32-493" aria-hidden="true" tabindex="-1"></a>  lipinski_data <span class="ot">&lt;-</span> <span class="fu">with_progress</span>({</span>
-<span id="cb32-494"><a href="#cb32-494" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">progressor</span>(<span class="at">along =</span> molecules)</span>
-<span id="cb32-495"><a href="#cb32-495" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb32-496"><a href="#cb32-496" aria-hidden="true" tabindex="-1"></a>    <span class="fu">future_map_dfr</span>(<span class="fu">seq_along</span>(molecules), <span class="cf">function</span>(i) {</span>
-<span id="cb32-497"><a href="#cb32-497" aria-hidden="true" tabindex="-1"></a>      mol <span class="ot">&lt;-</span> molecules[[i]]</span>
-<span id="cb32-498"><a href="#cb32-498" aria-hidden="true" tabindex="-1"></a>      <span class="fu">p</span>(<span class="at">message =</span> <span class="fu">sprintf</span>(<span class="st">&quot;Processing molecule %d/%d&quot;</span>, i, <span class="fu">length</span>(molecules)))</span>
-<span id="cb32-499"><a href="#cb32-499" aria-hidden="true" tabindex="-1"></a>      </span>
-<span id="cb32-500"><a href="#cb32-500" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span>(<span class="fu">is.null</span>(mol)) {</span>
-<span id="cb32-501"><a href="#cb32-501" aria-hidden="true" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">data.frame</span>(</span>
-<span id="cb32-502"><a href="#cb32-502" aria-hidden="true" tabindex="-1"></a>          <span class="at">idx =</span> i,</span>
-<span id="cb32-503"><a href="#cb32-503" aria-hidden="true" tabindex="-1"></a>          <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
-<span id="cb32-504"><a href="#cb32-504" aria-hidden="true" tabindex="-1"></a>          <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
-<span id="cb32-505"><a href="#cb32-505" aria-hidden="true" tabindex="-1"></a>        ))</span>
-<span id="cb32-506"><a href="#cb32-506" aria-hidden="true" tabindex="-1"></a>      }</span>
-<span id="cb32-507"><a href="#cb32-507" aria-hidden="true" tabindex="-1"></a>      </span>
-<span id="cb32-508"><a href="#cb32-508" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tryCatch</span>({</span>
-<span id="cb32-509"><a href="#cb32-509" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Molecular weight</span></span>
-<span id="cb32-510"><a href="#cb32-510" aria-hidden="true" tabindex="-1"></a>        mw <span class="ot">&lt;-</span> <span class="fu">get.mol2formula</span>(mol)<span class="sc">@</span>mass</span>
-<span id="cb32-511"><a href="#cb32-511" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb32-512"><a href="#cb32-512" aria-hidden="true" tabindex="-1"></a>        <span class="co"># LogP (XLogP)</span></span>
-<span id="cb32-513"><a href="#cb32-513" aria-hidden="true" tabindex="-1"></a>        xlogp_desc <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor&quot;</span>)</span>
-<span id="cb32-514"><a href="#cb32-514" aria-hidden="true" tabindex="-1"></a>        logP <span class="ot">&lt;-</span> xlogp_desc[[<span class="dv">1</span>]]</span>
-<span id="cb32-515"><a href="#cb32-515" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb32-516"><a href="#cb32-516" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Hydrogen bond donors</span></span>
-<span id="cb32-517"><a href="#cb32-517" aria-hidden="true" tabindex="-1"></a>        hbd <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb32-518"><a href="#cb32-518" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb32-519"><a href="#cb32-519" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Hydrogen bond acceptors  </span></span>
-<span id="cb32-520"><a href="#cb32-520" aria-hidden="true" tabindex="-1"></a>        hba <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb32-521"><a href="#cb32-521" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb32-522"><a href="#cb32-522" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Topological polar surface area</span></span>
-<span id="cb32-523"><a href="#cb32-523" aria-hidden="true" tabindex="-1"></a>        tpsa <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb32-524"><a href="#cb32-524" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb32-525"><a href="#cb32-525" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Rotatable bonds</span></span>
-<span id="cb32-526"><a href="#cb32-526" aria-hidden="true" tabindex="-1"></a>        nrotb <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb32-527"><a href="#cb32-527" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb32-528"><a href="#cb32-528" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Atom count</span></span>
-<span id="cb32-529"><a href="#cb32-529" aria-hidden="true" tabindex="-1"></a>        natoms <span class="ot">&lt;-</span> <span class="fu">get.atom.count</span>(mol)</span>
-<span id="cb32-530"><a href="#cb32-530" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb32-531"><a href="#cb32-531" aria-hidden="true" tabindex="-1"></a>        <span class="fu">data.frame</span>(</span>
-<span id="cb32-532"><a href="#cb32-532" aria-hidden="true" tabindex="-1"></a>          <span class="at">idx =</span> i,</span>
-<span id="cb32-533"><a href="#cb32-533" aria-hidden="true" tabindex="-1"></a>          <span class="at">MW =</span> mw,</span>
-<span id="cb32-534"><a href="#cb32-534" aria-hidden="true" tabindex="-1"></a>          <span class="at">LogP =</span> logP,</span>
-<span id="cb32-535"><a href="#cb32-535" aria-hidden="true" tabindex="-1"></a>          <span class="at">HBD =</span> hbd,</span>
-<span id="cb32-536"><a href="#cb32-536" aria-hidden="true" tabindex="-1"></a>          <span class="at">HBA =</span> hba,</span>
-<span id="cb32-537"><a href="#cb32-537" aria-hidden="true" tabindex="-1"></a>          <span class="at">TPSA =</span> tpsa,</span>
-<span id="cb32-538"><a href="#cb32-538" aria-hidden="true" tabindex="-1"></a>          <span class="at">nRotB =</span> nrotb,</span>
-<span id="cb32-539"><a href="#cb32-539" aria-hidden="true" tabindex="-1"></a>          <span class="at">nAtoms =</span> natoms</span>
-<span id="cb32-540"><a href="#cb32-540" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb32-541"><a href="#cb32-541" aria-hidden="true" tabindex="-1"></a>      }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
-<span id="cb32-542"><a href="#cb32-542" aria-hidden="true" tabindex="-1"></a>        <span class="fu">data.frame</span>(</span>
-<span id="cb32-543"><a href="#cb32-543" aria-hidden="true" tabindex="-1"></a>          <span class="at">idx =</span> i,</span>
-<span id="cb32-544"><a href="#cb32-544" aria-hidden="true" tabindex="-1"></a>          <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
-<span id="cb32-545"><a href="#cb32-545" aria-hidden="true" tabindex="-1"></a>          <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
-<span id="cb32-546"><a href="#cb32-546" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb32-547"><a href="#cb32-547" aria-hidden="true" tabindex="-1"></a>      })</span>
-<span id="cb32-548"><a href="#cb32-548" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">.options =</span> <span class="fu">furrr_options</span>(<span class="at">seed =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb32-549"><a href="#cb32-549" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb32-550"><a href="#cb32-550" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-551"><a href="#cb32-551" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="st">&quot;Descriptor calculation complete!&quot;</span>)</span>
+<span id="cb32-472"><a href="#cb32-472" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_h2</span>(<span class="st">&quot;Calculating Lipinski Descriptors (serial mode)&quot;</span>)</span>
+<span id="cb32-473"><a href="#cb32-473" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-474"><a href="#cb32-474" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Parse SMILES</span></span>
+<span id="cb32-475"><a href="#cb32-475" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Parsing SMILES structures...&quot;</span>)</span>
+<span id="cb32-476"><a href="#cb32-476" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-477"><a href="#cb32-477" aria-hidden="true" tabindex="-1"></a>  molecules <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map</span>(smiles_vector, <span class="cf">function</span>(smi) {</span>
+<span id="cb32-478"><a href="#cb32-478" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
+<span id="cb32-479"><a href="#cb32-479" aria-hidden="true" tabindex="-1"></a>      <span class="fu">parse.smiles</span>(smi)[[<span class="dv">1</span>]]</span>
+<span id="cb32-480"><a href="#cb32-480" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span>)</span>
+<span id="cb32-481"><a href="#cb32-481" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb32-482"><a href="#cb32-482" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-483"><a href="#cb32-483" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Set up a progress bar</span></span>
+<span id="cb32-484"><a href="#cb32-484" aria-hidden="true" tabindex="-1"></a>  total <span class="ot">&lt;-</span> <span class="fu">length</span>(molecules)</span>
+<span id="cb32-485"><a href="#cb32-485" aria-hidden="true" tabindex="-1"></a>  pb <span class="ot">&lt;-</span> <span class="fu">txtProgressBar</span>(<span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> total, <span class="at">style =</span> <span class="dv">3</span>)</span>
+<span id="cb32-486"><a href="#cb32-486" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-487"><a href="#cb32-487" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate descriptors serially</span></span>
+<span id="cb32-488"><a href="#cb32-488" aria-hidden="true" tabindex="-1"></a>  lipinski_data <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(<span class="fu">seq_along</span>(molecules), <span class="cf">function</span>(i) {</span>
+<span id="cb32-489"><a href="#cb32-489" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setTxtProgressBar</span>(pb, i)</span>
+<span id="cb32-490"><a href="#cb32-490" aria-hidden="true" tabindex="-1"></a>    mol <span class="ot">&lt;-</span> molecules[[i]]</span>
+<span id="cb32-491"><a href="#cb32-491" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(mol)) {</span>
+<span id="cb32-492"><a href="#cb32-492" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(<span class="fu">data.frame</span>(</span>
+<span id="cb32-493"><a href="#cb32-493" aria-hidden="true" tabindex="-1"></a>        <span class="at">idx =</span> i,</span>
+<span id="cb32-494"><a href="#cb32-494" aria-hidden="true" tabindex="-1"></a>        <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
+<span id="cb32-495"><a href="#cb32-495" aria-hidden="true" tabindex="-1"></a>        <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
+<span id="cb32-496"><a href="#cb32-496" aria-hidden="true" tabindex="-1"></a>      ))</span>
+<span id="cb32-497"><a href="#cb32-497" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb32-498"><a href="#cb32-498" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
+<span id="cb32-499"><a href="#cb32-499" aria-hidden="true" tabindex="-1"></a>      mw <span class="ot">&lt;-</span> <span class="fu">get.mol2formula</span>(mol)<span class="sc">@</span>mass</span>
+<span id="cb32-500"><a href="#cb32-500" aria-hidden="true" tabindex="-1"></a>      logP <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb32-501"><a href="#cb32-501" aria-hidden="true" tabindex="-1"></a>      hbd <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb32-502"><a href="#cb32-502" aria-hidden="true" tabindex="-1"></a>      hba <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb32-503"><a href="#cb32-503" aria-hidden="true" tabindex="-1"></a>      tpsa <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb32-504"><a href="#cb32-504" aria-hidden="true" tabindex="-1"></a>      nrotb <span class="ot">&lt;-</span> <span class="fu">eval.desc</span>(mol, <span class="st">&quot;org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor&quot;</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb32-505"><a href="#cb32-505" aria-hidden="true" tabindex="-1"></a>      natoms <span class="ot">&lt;-</span> <span class="fu">get.atom.count</span>(mol)</span>
+<span id="cb32-506"><a href="#cb32-506" aria-hidden="true" tabindex="-1"></a>      <span class="fu">data.frame</span>(</span>
+<span id="cb32-507"><a href="#cb32-507" aria-hidden="true" tabindex="-1"></a>        <span class="at">idx =</span> i,</span>
+<span id="cb32-508"><a href="#cb32-508" aria-hidden="true" tabindex="-1"></a>        <span class="at">MW =</span> mw,</span>
+<span id="cb32-509"><a href="#cb32-509" aria-hidden="true" tabindex="-1"></a>        <span class="at">LogP =</span> logP,</span>
+<span id="cb32-510"><a href="#cb32-510" aria-hidden="true" tabindex="-1"></a>        <span class="at">HBD =</span> hbd,</span>
+<span id="cb32-511"><a href="#cb32-511" aria-hidden="true" tabindex="-1"></a>        <span class="at">HBA =</span> hba,</span>
+<span id="cb32-512"><a href="#cb32-512" aria-hidden="true" tabindex="-1"></a>        <span class="at">TPSA =</span> tpsa,</span>
+<span id="cb32-513"><a href="#cb32-513" aria-hidden="true" tabindex="-1"></a>        <span class="at">nRotB =</span> nrotb,</span>
+<span id="cb32-514"><a href="#cb32-514" aria-hidden="true" tabindex="-1"></a>        <span class="at">nAtoms =</span> natoms</span>
+<span id="cb32-515"><a href="#cb32-515" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb32-516"><a href="#cb32-516" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
+<span id="cb32-517"><a href="#cb32-517" aria-hidden="true" tabindex="-1"></a>      <span class="fu">data.frame</span>(</span>
+<span id="cb32-518"><a href="#cb32-518" aria-hidden="true" tabindex="-1"></a>        <span class="at">idx =</span> i,</span>
+<span id="cb32-519"><a href="#cb32-519" aria-hidden="true" tabindex="-1"></a>        <span class="at">MW =</span> <span class="cn">NA</span>, <span class="at">LogP =</span> <span class="cn">NA</span>, <span class="at">HBD =</span> <span class="cn">NA</span>, <span class="at">HBA =</span> <span class="cn">NA</span>,</span>
+<span id="cb32-520"><a href="#cb32-520" aria-hidden="true" tabindex="-1"></a>        <span class="at">TPSA =</span> <span class="cn">NA</span>, <span class="at">nRotB =</span> <span class="cn">NA</span>, <span class="at">nAtoms =</span> <span class="cn">NA</span></span>
+<span id="cb32-521"><a href="#cb32-521" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb32-522"><a href="#cb32-522" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb32-523"><a href="#cb32-523" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb32-524"><a href="#cb32-524" aria-hidden="true" tabindex="-1"></a>  <span class="fu">close</span>(pb)</span>
+<span id="cb32-525"><a href="#cb32-525" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="st">&quot;Descriptor calculation complete!&quot;</span>)</span>
+<span id="cb32-526"><a href="#cb32-526" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(lipinski_data)</span>
+<span id="cb32-527"><a href="#cb32-527" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-528"><a href="#cb32-528" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-529"><a href="#cb32-529" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(cli<span class="sc">::</span><span class="fu">col_green</span>(<span class="st">&quot;✓ Lipinski descriptor functions defined!</span><span class="sc">\n</span><span class="st">&quot;</span>))</span>
+<span id="cb32-530"><a href="#cb32-530" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-531"><a href="#cb32-531" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb32-532"><a href="#cb32-532" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-533"><a href="#cb32-533" aria-hidden="true" tabindex="-1"></a><span class="fu">## Extended Molecular Fingerprints</span></span>
+<span id="cb32-534"><a href="#cb32-534" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-535"><a href="#cb32-535" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fingerprint-functions}</span></span>
+<span id="cb32-536"><a href="#cb32-536" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fingerprint-functions</span></span>
+<span id="cb32-537"><a href="#cb32-537" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-538"><a href="#cb32-538" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate molecular fingerprints</span></span>
+<span id="cb32-539"><a href="#cb32-539" aria-hidden="true" tabindex="-1"></a>calculate_fingerprints <span class="ot">&lt;-</span> <span class="cf">function</span>(smiles_vector, <span class="at">fp_type =</span> <span class="st">&quot;extended&quot;</span>, <span class="at">size =</span> <span class="dv">1024</span>) {</span>
+<span id="cb32-540"><a href="#cb32-540" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb32-541"><a href="#cb32-541" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_h2</span>(<span class="fu">glue</span>(<span class="st">&quot;Calculating {fp_type} Fingerprints (size={size})&quot;</span>))</span>
+<span id="cb32-542"><a href="#cb32-542" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb32-543"><a href="#cb32-543" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Parse SMILES</span></span>
+<span id="cb32-544"><a href="#cb32-544" aria-hidden="true" tabindex="-1"></a>  molecules <span class="ot">&lt;-</span> <span class="fu">future_map</span>(smiles_vector, <span class="cf">function</span>(smi) {</span>
+<span id="cb32-545"><a href="#cb32-545" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
+<span id="cb32-546"><a href="#cb32-546" aria-hidden="true" tabindex="-1"></a>      <span class="fu">parse.smiles</span>(smi)[[<span class="dv">1</span>]]</span>
+<span id="cb32-547"><a href="#cb32-547" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span>)</span>
+<span id="cb32-548"><a href="#cb32-548" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">.progress =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb32-549"><a href="#cb32-549" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb32-550"><a href="#cb32-550" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate fingerprints</span></span>
+<span id="cb32-551"><a href="#cb32-551" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Computing fingerprints...&quot;</span>)</span>
 <span id="cb32-552"><a href="#cb32-552" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-553"><a href="#cb32-553" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(lipinski_data)</span>
-<span id="cb32-554"><a href="#cb32-554" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb32-555"><a href="#cb32-555" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-556"><a href="#cb32-556" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(cli<span class="sc">::</span><span class="fu">col_green</span>(<span class="st">&quot;✓ Lipinski descriptor functions defined!</span><span class="sc">\n</span><span class="st">&quot;</span>))</span>
-<span id="cb32-557"><a href="#cb32-557" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-558"><a href="#cb32-558" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-559"><a href="#cb32-559" aria-hidden="true" tabindex="-1"></a><span class="fu">## Extended Molecular Fingerprints</span></span>
-<span id="cb32-560"><a href="#cb32-560" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-561"><a href="#cb32-561" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fingerprint-functions}</span></span>
-<span id="cb32-562"><a href="#cb32-562" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fingerprint-functions</span></span>
-<span id="cb32-563"><a href="#cb32-563" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-564"><a href="#cb32-564" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate molecular fingerprints</span></span>
-<span id="cb32-565"><a href="#cb32-565" aria-hidden="true" tabindex="-1"></a>calculate_fingerprints <span class="ot">&lt;-</span> <span class="cf">function</span>(smiles_vector, <span class="at">fp_type =</span> <span class="st">&quot;extended&quot;</span>, <span class="at">size =</span> <span class="dv">1024</span>) {</span>
-<span id="cb32-566"><a href="#cb32-566" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-567"><a href="#cb32-567" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_h2</span>(<span class="fu">glue</span>(<span class="st">&quot;Calculating {fp_type} Fingerprints (size={size})&quot;</span>))</span>
-<span id="cb32-568"><a href="#cb32-568" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-569"><a href="#cb32-569" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Parse SMILES</span></span>
-<span id="cb32-570"><a href="#cb32-570" aria-hidden="true" tabindex="-1"></a>  molecules <span class="ot">&lt;-</span> <span class="fu">future_map</span>(smiles_vector, <span class="cf">function</span>(smi) {</span>
-<span id="cb32-571"><a href="#cb32-571" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
-<span id="cb32-572"><a href="#cb32-572" aria-hidden="true" tabindex="-1"></a>      <span class="fu">parse.smiles</span>(smi)[[<span class="dv">1</span>]]</span>
-<span id="cb32-573"><a href="#cb32-573" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span>)</span>
-<span id="cb32-574"><a href="#cb32-574" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">.progress =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb32-575"><a href="#cb32-575" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-576"><a href="#cb32-576" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate fingerprints</span></span>
-<span id="cb32-577"><a href="#cb32-577" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Computing fingerprints...&quot;</span>)</span>
-<span id="cb32-578"><a href="#cb32-578" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-579"><a href="#cb32-579" aria-hidden="true" tabindex="-1"></a> fp_matrix <span class="ot">&lt;-</span> <span class="fu">with_progress</span>({</span>
-<span id="cb32-580"><a href="#cb32-580" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">progressor</span>(<span class="at">along =</span> molecules)</span>
+<span id="cb32-553"><a href="#cb32-553" aria-hidden="true" tabindex="-1"></a> fp_matrix <span class="ot">&lt;-</span> <span class="fu">with_progress</span>({</span>
+<span id="cb32-554"><a href="#cb32-554" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">progressor</span>(<span class="at">along =</span> molecules)</span>
+<span id="cb32-555"><a href="#cb32-555" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb32-556"><a href="#cb32-556" aria-hidden="true" tabindex="-1"></a>  <span class="fu">future_map</span>(<span class="fu">seq_along</span>(molecules), <span class="cf">function</span>(i) {</span>
+<span id="cb32-557"><a href="#cb32-557" aria-hidden="true" tabindex="-1"></a>    mol <span class="ot">&lt;-</span> molecules[[i]]</span>
+<span id="cb32-558"><a href="#cb32-558" aria-hidden="true" tabindex="-1"></a>    <span class="fu">p</span>(<span class="at">message =</span> <span class="fu">sprintf</span>(<span class="st">&quot;Fingerprint %d/%d&quot;</span>, i, <span class="fu">length</span>(molecules)))</span>
+<span id="cb32-559"><a href="#cb32-559" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb32-560"><a href="#cb32-560" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(mol)) {</span>
+<span id="cb32-561"><a href="#cb32-561" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(<span class="fu">as.data.frame</span>(<span class="fu">t</span>(<span class="fu">rep</span>(<span class="dv">0</span>, size))))  <span class="co"># Return data frame row</span></span>
+<span id="cb32-562"><a href="#cb32-562" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb32-563"><a href="#cb32-563" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb32-564"><a href="#cb32-564" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
+<span id="cb32-565"><a href="#cb32-565" aria-hidden="true" tabindex="-1"></a>      fp <span class="ot">&lt;-</span> <span class="fu">get.fingerprint</span>(mol, <span class="at">type =</span> fp_type, <span class="at">fp.mode =</span> <span class="st">&quot;bit&quot;</span>, <span class="at">size =</span> size)</span>
+<span id="cb32-566"><a href="#cb32-566" aria-hidden="true" tabindex="-1"></a>      fp_vec <span class="ot">&lt;-</span> <span class="fu">numeric</span>(size)</span>
+<span id="cb32-567"><a href="#cb32-567" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">length</span>(fp<span class="sc">@</span>bits) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb32-568"><a href="#cb32-568" aria-hidden="true" tabindex="-1"></a>        fp_vec[fp<span class="sc">@</span>bits] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb32-569"><a href="#cb32-569" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb32-570"><a href="#cb32-570" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.data.frame</span>(<span class="fu">t</span>(fp_vec))  <span class="co"># Convert numeric vector -&gt; 1-row data frame</span></span>
+<span id="cb32-571"><a href="#cb32-571" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
+<span id="cb32-572"><a href="#cb32-572" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.data.frame</span>(<span class="fu">t</span>(<span class="fu">rep</span>(<span class="dv">0</span>, size)))  <span class="co"># Safe fallback as 1-row data frame</span></span>
+<span id="cb32-573"><a href="#cb32-573" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb32-574"><a href="#cb32-574" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">.options =</span> <span class="fu">furrr_options</span>(<span class="at">seed =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb32-575"><a href="#cb32-575" aria-hidden="true" tabindex="-1"></a>}) <span class="sc">%&gt;%</span> <span class="fu">bind_rows</span>()</span>
+<span id="cb32-576"><a href="#cb32-576" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-577"><a href="#cb32-577" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb32-578"><a href="#cb32-578" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(fp_matrix) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;FP&quot;</span>, <span class="dv">1</span><span class="sc">:</span>size)</span>
+<span id="cb32-579"><a href="#cb32-579" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb32-580"><a href="#cb32-580" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="fu">glue</span>(<span class="st">&quot;Generated {ncol(fp_matrix)} fingerprint features&quot;</span>))</span>
 <span id="cb32-581"><a href="#cb32-581" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-582"><a href="#cb32-582" aria-hidden="true" tabindex="-1"></a>  <span class="fu">future_map</span>(<span class="fu">seq_along</span>(molecules), <span class="cf">function</span>(i) {</span>
-<span id="cb32-583"><a href="#cb32-583" aria-hidden="true" tabindex="-1"></a>    mol <span class="ot">&lt;-</span> molecules[[i]]</span>
-<span id="cb32-584"><a href="#cb32-584" aria-hidden="true" tabindex="-1"></a>    <span class="fu">p</span>(<span class="at">message =</span> <span class="fu">sprintf</span>(<span class="st">&quot;Fingerprint %d/%d&quot;</span>, i, <span class="fu">length</span>(molecules)))</span>
-<span id="cb32-585"><a href="#cb32-585" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb32-586"><a href="#cb32-586" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(mol)) {</span>
-<span id="cb32-587"><a href="#cb32-587" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(<span class="fu">as.data.frame</span>(<span class="fu">t</span>(<span class="fu">rep</span>(<span class="dv">0</span>, size))))  <span class="co"># Return data frame row</span></span>
-<span id="cb32-588"><a href="#cb32-588" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb32-589"><a href="#cb32-589" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb32-590"><a href="#cb32-590" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tryCatch</span>({</span>
-<span id="cb32-591"><a href="#cb32-591" aria-hidden="true" tabindex="-1"></a>      fp <span class="ot">&lt;-</span> <span class="fu">get.fingerprint</span>(mol, <span class="at">type =</span> fp_type, <span class="at">fp.mode =</span> <span class="st">&quot;bit&quot;</span>, <span class="at">size =</span> size)</span>
-<span id="cb32-592"><a href="#cb32-592" aria-hidden="true" tabindex="-1"></a>      fp_vec <span class="ot">&lt;-</span> <span class="fu">numeric</span>(size)</span>
-<span id="cb32-593"><a href="#cb32-593" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">length</span>(fp<span class="sc">@</span>bits) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb32-594"><a href="#cb32-594" aria-hidden="true" tabindex="-1"></a>        fp_vec[fp<span class="sc">@</span>bits] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb32-595"><a href="#cb32-595" aria-hidden="true" tabindex="-1"></a>      }</span>
-<span id="cb32-596"><a href="#cb32-596" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.data.frame</span>(<span class="fu">t</span>(fp_vec))  <span class="co"># Convert numeric vector -&gt; 1-row data frame</span></span>
-<span id="cb32-597"><a href="#cb32-597" aria-hidden="true" tabindex="-1"></a>    }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
-<span id="cb32-598"><a href="#cb32-598" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.data.frame</span>(<span class="fu">t</span>(<span class="fu">rep</span>(<span class="dv">0</span>, size)))  <span class="co"># Safe fallback as 1-row data frame</span></span>
-<span id="cb32-599"><a href="#cb32-599" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb32-600"><a href="#cb32-600" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">.options =</span> <span class="fu">furrr_options</span>(<span class="at">seed =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb32-601"><a href="#cb32-601" aria-hidden="true" tabindex="-1"></a>}) <span class="sc">%&gt;%</span> <span class="fu">bind_rows</span>()</span>
-<span id="cb32-602"><a href="#cb32-602" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-603"><a href="#cb32-603" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-604"><a href="#cb32-604" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(fp_matrix) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;FP&quot;</span>, <span class="dv">1</span><span class="sc">:</span>size)</span>
-<span id="cb32-605"><a href="#cb32-605" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-606"><a href="#cb32-606" aria-hidden="true" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="fu">glue</span>(<span class="st">&quot;Generated {ncol(fp_matrix)} fingerprint features&quot;</span>))</span>
-<span id="cb32-607"><a href="#cb32-607" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-608"><a href="#cb32-608" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">as.data.frame</span>(fp_matrix))</span>
-<span id="cb32-609"><a href="#cb32-609" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb32-610"><a href="#cb32-610" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-611"><a href="#cb32-611" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(cli<span class="sc">::</span><span class="fu">col_green</span>(<span class="st">&quot;✓ Fingerprint functions defined!</span><span class="sc">\n</span><span class="st">&quot;</span>))</span>
-<span id="cb32-612"><a href="#cb32-612" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-613"><a href="#cb32-613" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-614"><a href="#cb32-614" aria-hidden="true" tabindex="-1"></a><span class="fu">## Calculate All Descriptors</span></span>
-<span id="cb32-615"><a href="#cb32-615" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-616"><a href="#cb32-616" aria-hidden="true" tabindex="-1"></a><span class="in">```{r calculate-descriptors}</span></span>
-<span id="cb32-617"><a href="#cb32-617" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: calculate-descriptors</span></span>
-<span id="cb32-618"><a href="#cb32-618" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb32-619"><a href="#cb32-619" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-620"><a href="#cb32-620" aria-hidden="true" tabindex="-1"></a><span class="co"># Load clean data</span></span>
-<span id="cb32-621"><a href="#cb32-621" aria-hidden="true" tabindex="-1"></a>bioactivity_clean <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;data/bioactivity_clean.csv&quot;</span>)</span>
-<span id="cb32-622"><a href="#cb32-622" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-623"><a href="#cb32-623" aria-hidden="true" tabindex="-1"></a><span class="fu">check_memory</span>(<span class="st">&quot;Before descriptor calculation&quot;</span>)</span>
-<span id="cb32-624"><a href="#cb32-624" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-625"><a href="#cb32-625" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Lipinski descriptors</span></span>
-<span id="cb32-626"><a href="#cb32-626" aria-hidden="true" tabindex="-1"></a>lipinski_descriptors <span class="ot">&lt;-</span> <span class="fu">time_step</span>(</span>
-<span id="cb32-627"><a href="#cb32-627" aria-hidden="true" tabindex="-1"></a>  <span class="fu">calculate_lipinski_descriptors</span>(bioactivity_clean<span class="sc">$</span>canonical_smiles),</span>
-<span id="cb32-628"><a href="#cb32-628" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Lipinski Descriptor Calculation&quot;</span></span>
-<span id="cb32-629"><a href="#cb32-629" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb32-630"><a href="#cb32-630" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-631"><a href="#cb32-631" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate molecular fingerprints</span></span>
-<span id="cb32-632"><a href="#cb32-632" aria-hidden="true" tabindex="-1"></a>molecular_fingerprints <span class="ot">&lt;-</span> <span class="fu">time_step</span>(</span>
-<span id="cb32-633"><a href="#cb32-633" aria-hidden="true" tabindex="-1"></a>  <span class="fu">calculate_fingerprints</span>(</span>
-<span id="cb32-634"><a href="#cb32-634" aria-hidden="true" tabindex="-1"></a>    bioactivity_clean<span class="sc">$</span>canonical_smiles,</span>
-<span id="cb32-635"><a href="#cb32-635" aria-hidden="true" tabindex="-1"></a>    <span class="at">fp_type =</span> <span class="st">&quot;extended&quot;</span>,</span>
-<span id="cb32-636"><a href="#cb32-636" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">1024</span></span>
-<span id="cb32-637"><a href="#cb32-637" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb32-638"><a href="#cb32-638" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Molecular Fingerprint Calculation&quot;</span></span>
-<span id="cb32-639"><a href="#cb32-639" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb32-640"><a href="#cb32-640" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-641"><a href="#cb32-641" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine all features</span></span>
-<span id="cb32-642"><a href="#cb32-642" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(</span>
-<span id="cb32-643"><a href="#cb32-643" aria-hidden="true" tabindex="-1"></a>  bioactivity_clean,</span>
-<span id="cb32-644"><a href="#cb32-644" aria-hidden="true" tabindex="-1"></a>  lipinski_descriptors <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>idx),</span>
-<span id="cb32-645"><a href="#cb32-645" aria-hidden="true" tabindex="-1"></a>  molecular_fingerprints</span>
-<span id="cb32-646"><a href="#cb32-646" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb32-647"><a href="#cb32-647" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-648"><a href="#cb32-648" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Lipinski&#39;s Rule of Five</span></span>
-<span id="cb32-649"><a href="#cb32-649" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> full_dataset <span class="sc">%&gt;%</span></span>
-<span id="cb32-650"><a href="#cb32-650" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb32-651"><a href="#cb32-651" aria-hidden="true" tabindex="-1"></a>    <span class="at">lipinski_violations =</span> </span>
-<span id="cb32-652"><a href="#cb32-652" aria-hidden="true" tabindex="-1"></a>      (MW <span class="sc">&gt;</span> <span class="dv">500</span>) <span class="sc">+</span> </span>
-<span id="cb32-653"><a href="#cb32-653" aria-hidden="true" tabindex="-1"></a>      (LogP <span class="sc">&gt;</span> <span class="dv">5</span>) <span class="sc">+</span> </span>
-<span id="cb32-654"><a href="#cb32-654" aria-hidden="true" tabindex="-1"></a>      (HBD <span class="sc">&gt;</span> <span class="dv">5</span>) <span class="sc">+</span> </span>
-<span id="cb32-655"><a href="#cb32-655" aria-hidden="true" tabindex="-1"></a>      (HBA <span class="sc">&gt;</span> <span class="dv">10</span>),</span>
-<span id="cb32-656"><a href="#cb32-656" aria-hidden="true" tabindex="-1"></a>    <span class="at">druglike =</span> lipinski_violations <span class="sc">&lt;=</span> <span class="dv">1</span></span>
-<span id="cb32-657"><a href="#cb32-657" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb32-658"><a href="#cb32-658" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-659"><a href="#cb32-659" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove low variance features</span></span>
-<span id="cb32-660"><a href="#cb32-660" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Removing low-variance features...&quot;</span>)</span>
-<span id="cb32-661"><a href="#cb32-661" aria-hidden="true" tabindex="-1"></a>fp_cols <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;^FP&quot;</span>, <span class="fu">names</span>(full_dataset), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb32-662"><a href="#cb32-662" aria-hidden="true" tabindex="-1"></a>variance_check <span class="ot">&lt;-</span> full_dataset <span class="sc">%&gt;%</span></span>
-<span id="cb32-663"><a href="#cb32-663" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">all_of</span>(fp_cols)) <span class="sc">%&gt;%</span></span>
-<span id="cb32-664"><a href="#cb32-664" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), var, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb32-665"><a href="#cb32-665" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-666"><a href="#cb32-666" aria-hidden="true" tabindex="-1"></a>low_var_cols <span class="ot">&lt;-</span> <span class="fu">names</span>(variance_check)[variance_check[<span class="dv">1</span>,] <span class="sc">&lt;</span> <span class="fl">0.01</span>]</span>
-<span id="cb32-667"><a href="#cb32-667" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> full_dataset <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">any_of</span>(low_var_cols))</span>
-<span id="cb32-668"><a href="#cb32-668" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-669"><a href="#cb32-669" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="fu">glue</span>(<span class="st">&quot;Removed {length(low_var_cols)} low-variance features&quot;</span>))</span>
-<span id="cb32-670"><a href="#cb32-670" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-671"><a href="#cb32-671" aria-hidden="true" tabindex="-1"></a><span class="co"># Save complete dataset</span></span>
-<span id="cb32-672"><a href="#cb32-672" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(full_dataset, <span class="st">&quot;data/full_dataset_with_descriptors.csv&quot;</span>)</span>
-<span id="cb32-673"><a href="#cb32-673" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="st">&quot;Complete dataset saved!&quot;</span>)</span>
-<span id="cb32-674"><a href="#cb32-674" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-675"><a href="#cb32-675" aria-hidden="true" tabindex="-1"></a><span class="fu">check_memory</span>(<span class="st">&quot;After descriptor calculation&quot;</span>)</span>
-<span id="cb32-676"><a href="#cb32-676" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-677"><a href="#cb32-677" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-678"><a href="#cb32-678" aria-hidden="true" tabindex="-1"></a><span class="fu"># Data Visualization {#sec-visualization}</span></span>
-<span id="cb32-679"><a href="#cb32-679" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-680"><a href="#cb32-680" aria-hidden="true" tabindex="-1"></a><span class="fu">## Chemical Space Analysis</span></span>
-<span id="cb32-681"><a href="#cb32-681" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-682"><a href="#cb32-682" aria-hidden="true" tabindex="-1"></a><span class="in">```{r visualize-chemical-space}</span></span>
-<span id="cb32-683"><a href="#cb32-683" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: visualize-chemical-space</span></span>
-<span id="cb32-684"><a href="#cb32-684" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb32-685"><a href="#cb32-685" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 12</span></span>
-<span id="cb32-686"><a href="#cb32-686" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 8</span></span>
-<span id="cb32-687"><a href="#cb32-687" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-688"><a href="#cb32-688" aria-hidden="true" tabindex="-1"></a><span class="co"># Load full dataset</span></span>
-<span id="cb32-689"><a href="#cb32-689" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;data/full_dataset_with_descriptors.csv&quot;</span>)</span>
+<span id="cb32-582"><a href="#cb32-582" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">as.data.frame</span>(fp_matrix))</span>
+<span id="cb32-583"><a href="#cb32-583" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-584"><a href="#cb32-584" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-585"><a href="#cb32-585" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(cli<span class="sc">::</span><span class="fu">col_green</span>(<span class="st">&quot;✓ Fingerprint functions defined!</span><span class="sc">\n</span><span class="st">&quot;</span>))</span>
+<span id="cb32-586"><a href="#cb32-586" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb32-587"><a href="#cb32-587" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-588"><a href="#cb32-588" aria-hidden="true" tabindex="-1"></a><span class="fu">## Calculate All Descriptors</span></span>
+<span id="cb32-589"><a href="#cb32-589" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-590"><a href="#cb32-590" aria-hidden="true" tabindex="-1"></a><span class="in">```{r calculate-descriptors}</span></span>
+<span id="cb32-591"><a href="#cb32-591" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: calculate-descriptors</span></span>
+<span id="cb32-592"><a href="#cb32-592" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb32-593"><a href="#cb32-593" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-594"><a href="#cb32-594" aria-hidden="true" tabindex="-1"></a><span class="co"># Load clean data</span></span>
+<span id="cb32-595"><a href="#cb32-595" aria-hidden="true" tabindex="-1"></a>bioactivity_clean <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;data/bioactivity_clean.csv&quot;</span>)</span>
+<span id="cb32-596"><a href="#cb32-596" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-597"><a href="#cb32-597" aria-hidden="true" tabindex="-1"></a><span class="fu">check_memory</span>(<span class="st">&quot;Before descriptor calculation&quot;</span>)</span>
+<span id="cb32-598"><a href="#cb32-598" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-599"><a href="#cb32-599" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Lipinski descriptors</span></span>
+<span id="cb32-600"><a href="#cb32-600" aria-hidden="true" tabindex="-1"></a>lipinski_descriptors <span class="ot">&lt;-</span> <span class="fu">time_step</span>(</span>
+<span id="cb32-601"><a href="#cb32-601" aria-hidden="true" tabindex="-1"></a>  <span class="fu">calculate_lipinski_descriptors</span>(bioactivity_clean<span class="sc">$</span>canonical_smiles),</span>
+<span id="cb32-602"><a href="#cb32-602" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Lipinski Descriptor Calculation&quot;</span></span>
+<span id="cb32-603"><a href="#cb32-603" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-604"><a href="#cb32-604" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-605"><a href="#cb32-605" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate molecular fingerprints</span></span>
+<span id="cb32-606"><a href="#cb32-606" aria-hidden="true" tabindex="-1"></a>molecular_fingerprints <span class="ot">&lt;-</span> <span class="fu">time_step</span>(</span>
+<span id="cb32-607"><a href="#cb32-607" aria-hidden="true" tabindex="-1"></a>  <span class="fu">calculate_fingerprints</span>(</span>
+<span id="cb32-608"><a href="#cb32-608" aria-hidden="true" tabindex="-1"></a>    bioactivity_clean<span class="sc">$</span>canonical_smiles,</span>
+<span id="cb32-609"><a href="#cb32-609" aria-hidden="true" tabindex="-1"></a>    <span class="at">fp_type =</span> <span class="st">&quot;extended&quot;</span>,</span>
+<span id="cb32-610"><a href="#cb32-610" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">1024</span></span>
+<span id="cb32-611"><a href="#cb32-611" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb32-612"><a href="#cb32-612" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Molecular Fingerprint Calculation&quot;</span></span>
+<span id="cb32-613"><a href="#cb32-613" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-614"><a href="#cb32-614" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-615"><a href="#cb32-615" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine all features</span></span>
+<span id="cb32-616"><a href="#cb32-616" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(</span>
+<span id="cb32-617"><a href="#cb32-617" aria-hidden="true" tabindex="-1"></a>  bioactivity_clean,</span>
+<span id="cb32-618"><a href="#cb32-618" aria-hidden="true" tabindex="-1"></a>  lipinski_descriptors <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>idx),</span>
+<span id="cb32-619"><a href="#cb32-619" aria-hidden="true" tabindex="-1"></a>  molecular_fingerprints</span>
+<span id="cb32-620"><a href="#cb32-620" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-621"><a href="#cb32-621" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-622"><a href="#cb32-622" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Lipinski&#39;s Rule of Five</span></span>
+<span id="cb32-623"><a href="#cb32-623" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> full_dataset <span class="sc">%&gt;%</span></span>
+<span id="cb32-624"><a href="#cb32-624" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb32-625"><a href="#cb32-625" aria-hidden="true" tabindex="-1"></a>    <span class="at">lipinski_violations =</span> </span>
+<span id="cb32-626"><a href="#cb32-626" aria-hidden="true" tabindex="-1"></a>      (MW <span class="sc">&gt;</span> <span class="dv">500</span>) <span class="sc">+</span> </span>
+<span id="cb32-627"><a href="#cb32-627" aria-hidden="true" tabindex="-1"></a>      (LogP <span class="sc">&gt;</span> <span class="dv">5</span>) <span class="sc">+</span> </span>
+<span id="cb32-628"><a href="#cb32-628" aria-hidden="true" tabindex="-1"></a>      (HBD <span class="sc">&gt;</span> <span class="dv">5</span>) <span class="sc">+</span> </span>
+<span id="cb32-629"><a href="#cb32-629" aria-hidden="true" tabindex="-1"></a>      (HBA <span class="sc">&gt;</span> <span class="dv">10</span>),</span>
+<span id="cb32-630"><a href="#cb32-630" aria-hidden="true" tabindex="-1"></a>    <span class="at">druglike =</span> lipinski_violations <span class="sc">&lt;=</span> <span class="dv">1</span></span>
+<span id="cb32-631"><a href="#cb32-631" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb32-632"><a href="#cb32-632" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-633"><a href="#cb32-633" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove low variance features</span></span>
+<span id="cb32-634"><a href="#cb32-634" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_alert_info</span>(<span class="st">&quot;Removing low-variance features...&quot;</span>)</span>
+<span id="cb32-635"><a href="#cb32-635" aria-hidden="true" tabindex="-1"></a>fp_cols <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;^FP&quot;</span>, <span class="fu">names</span>(full_dataset), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb32-636"><a href="#cb32-636" aria-hidden="true" tabindex="-1"></a>variance_check <span class="ot">&lt;-</span> full_dataset <span class="sc">%&gt;%</span></span>
+<span id="cb32-637"><a href="#cb32-637" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">all_of</span>(fp_cols)) <span class="sc">%&gt;%</span></span>
+<span id="cb32-638"><a href="#cb32-638" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), var, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb32-639"><a href="#cb32-639" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-640"><a href="#cb32-640" aria-hidden="true" tabindex="-1"></a>low_var_cols <span class="ot">&lt;-</span> <span class="fu">names</span>(variance_check)[variance_check[<span class="dv">1</span>,] <span class="sc">&lt;</span> <span class="fl">0.01</span>]</span>
+<span id="cb32-641"><a href="#cb32-641" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> full_dataset <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span><span class="fu">any_of</span>(low_var_cols))</span>
+<span id="cb32-642"><a href="#cb32-642" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-643"><a href="#cb32-643" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="fu">glue</span>(<span class="st">&quot;Removed {length(low_var_cols)} low-variance features&quot;</span>))</span>
+<span id="cb32-644"><a href="#cb32-644" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-645"><a href="#cb32-645" aria-hidden="true" tabindex="-1"></a><span class="co"># Save complete dataset</span></span>
+<span id="cb32-646"><a href="#cb32-646" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(full_dataset, <span class="st">&quot;data/full_dataset_with_descriptors.csv&quot;</span>)</span>
+<span id="cb32-647"><a href="#cb32-647" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_alert_success</span>(<span class="st">&quot;Complete dataset saved!&quot;</span>)</span>
+<span id="cb32-648"><a href="#cb32-648" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-649"><a href="#cb32-649" aria-hidden="true" tabindex="-1"></a><span class="fu">check_memory</span>(<span class="st">&quot;After descriptor calculation&quot;</span>)</span>
+<span id="cb32-650"><a href="#cb32-650" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb32-651"><a href="#cb32-651" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-652"><a href="#cb32-652" aria-hidden="true" tabindex="-1"></a><span class="fu"># Data Visualization {#sec-visualization}</span></span>
+<span id="cb32-653"><a href="#cb32-653" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-654"><a href="#cb32-654" aria-hidden="true" tabindex="-1"></a><span class="fu">## Chemical Space Analysis</span></span>
+<span id="cb32-655"><a href="#cb32-655" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-656"><a href="#cb32-656" aria-hidden="true" tabindex="-1"></a><span class="in">```{r visualize-chemical-space}</span></span>
+<span id="cb32-657"><a href="#cb32-657" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: visualize-chemical-space</span></span>
+<span id="cb32-658"><a href="#cb32-658" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb32-659"><a href="#cb32-659" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 12</span></span>
+<span id="cb32-660"><a href="#cb32-660" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 8</span></span>
+<span id="cb32-661"><a href="#cb32-661" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-662"><a href="#cb32-662" aria-hidden="true" tabindex="-1"></a><span class="co"># Load full dataset</span></span>
+<span id="cb32-663"><a href="#cb32-663" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;data/full_dataset_with_descriptors.csv&quot;</span>)</span>
+<span id="cb32-664"><a href="#cb32-664" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-665"><a href="#cb32-665" aria-hidden="true" tabindex="-1"></a><span class="co"># Chemical space plot</span></span>
+<span id="cb32-666"><a href="#cb32-666" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_dataset, <span class="fu">aes</span>(<span class="at">x =</span> MW, <span class="at">y =</span> LogP, <span class="at">color =</span> bioactivity_class)) <span class="sc">+</span></span>
+<span id="cb32-667"><a href="#cb32-667" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">size =</span> <span class="fl">2.5</span>) <span class="sc">+</span></span>
+<span id="cb32-668"><a href="#cb32-668" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">5</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb32-669"><a href="#cb32-669" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">500</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb32-670"><a href="#cb32-670" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(</span>
+<span id="cb32-671"><a href="#cb32-671" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb32-672"><a href="#cb32-672" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Highly Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#e41a1c&quot;</span>,</span>
+<span id="cb32-673"><a href="#cb32-673" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#377eb8&quot;</span>,</span>
+<span id="cb32-674"><a href="#cb32-674" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Moderately Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#4daf4a&quot;</span>,</span>
+<span id="cb32-675"><a href="#cb32-675" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Inactive&quot;</span> <span class="ot">=</span> <span class="st">&quot;#999999&quot;</span></span>
+<span id="cb32-676"><a href="#cb32-676" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb32-677"><a href="#cb32-677" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-678"><a href="#cb32-678" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb32-679"><a href="#cb32-679" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Chemical Space Analysis - Lipinski Descriptors&quot;</span>,</span>
+<span id="cb32-680"><a href="#cb32-680" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Molecular Weight vs LogP with Lipinski thresholds&quot;</span>,</span>
+<span id="cb32-681"><a href="#cb32-681" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Molecular Weight (Da)&quot;</span>,</span>
+<span id="cb32-682"><a href="#cb32-682" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;LogP (Lipophilicity)&quot;</span>,</span>
+<span id="cb32-683"><a href="#cb32-683" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;Bioactivity Class&quot;</span></span>
+<span id="cb32-684"><a href="#cb32-684" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-685"><a href="#cb32-685" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb32-686"><a href="#cb32-686" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb32-687"><a href="#cb32-687" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>,</span>
+<span id="cb32-688"><a href="#cb32-688" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>, <span class="at">size =</span> <span class="dv">16</span>)</span>
+<span id="cb32-689"><a href="#cb32-689" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb32-690"><a href="#cb32-690" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-691"><a href="#cb32-691" aria-hidden="true" tabindex="-1"></a><span class="co"># Chemical space plot</span></span>
-<span id="cb32-692"><a href="#cb32-692" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_dataset, <span class="fu">aes</span>(<span class="at">x =</span> MW, <span class="at">y =</span> LogP, <span class="at">color =</span> bioactivity_class)) <span class="sc">+</span></span>
+<span id="cb32-691"><a href="#cb32-691" aria-hidden="true" tabindex="-1"></a><span class="co"># TPSA vs LogP</span></span>
+<span id="cb32-692"><a href="#cb32-692" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_dataset, <span class="fu">aes</span>(<span class="at">x =</span> TPSA, <span class="at">y =</span> LogP, <span class="at">color =</span> pIC50)) <span class="sc">+</span></span>
 <span id="cb32-693"><a href="#cb32-693" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">size =</span> <span class="fl">2.5</span>) <span class="sc">+</span></span>
-<span id="cb32-694"><a href="#cb32-694" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">5</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb32-695"><a href="#cb32-695" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">500</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb32-696"><a href="#cb32-696" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(</span>
-<span id="cb32-697"><a href="#cb32-697" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
-<span id="cb32-698"><a href="#cb32-698" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Highly Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#e41a1c&quot;</span>,</span>
-<span id="cb32-699"><a href="#cb32-699" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#377eb8&quot;</span>,</span>
-<span id="cb32-700"><a href="#cb32-700" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Moderately Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#4daf4a&quot;</span>,</span>
-<span id="cb32-701"><a href="#cb32-701" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Inactive&quot;</span> <span class="ot">=</span> <span class="st">&quot;#999999&quot;</span></span>
-<span id="cb32-702"><a href="#cb32-702" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb32-703"><a href="#cb32-703" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb32-704"><a href="#cb32-704" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb32-705"><a href="#cb32-705" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Chemical Space Analysis - Lipinski Descriptors&quot;</span>,</span>
-<span id="cb32-706"><a href="#cb32-706" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Molecular Weight vs LogP with Lipinski thresholds&quot;</span>,</span>
-<span id="cb32-707"><a href="#cb32-707" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Molecular Weight (Da)&quot;</span>,</span>
-<span id="cb32-708"><a href="#cb32-708" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;LogP (Lipophilicity)&quot;</span>,</span>
-<span id="cb32-709"><a href="#cb32-709" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;Bioactivity Class&quot;</span></span>
-<span id="cb32-710"><a href="#cb32-710" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb32-711"><a href="#cb32-711" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
-<span id="cb32-712"><a href="#cb32-712" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb32-713"><a href="#cb32-713" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>,</span>
-<span id="cb32-714"><a href="#cb32-714" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>, <span class="at">size =</span> <span class="dv">16</span>)</span>
-<span id="cb32-715"><a href="#cb32-715" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb32-694"><a href="#cb32-694" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">option =</span> <span class="st">&quot;plasma&quot;</span>) <span class="sc">+</span></span>
+<span id="cb32-695"><a href="#cb32-695" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb32-696"><a href="#cb32-696" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Polar Surface Area vs Lipophilicity&quot;</span>,</span>
+<span id="cb32-697"><a href="#cb32-697" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;TPSA (Ų)&quot;</span>,</span>
+<span id="cb32-698"><a href="#cb32-698" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;LogP&quot;</span>,</span>
+<span id="cb32-699"><a href="#cb32-699" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;pIC50&quot;</span></span>
+<span id="cb32-700"><a href="#cb32-700" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-701"><a href="#cb32-701" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb32-702"><a href="#cb32-702" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>))</span>
+<span id="cb32-703"><a href="#cb32-703" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-704"><a href="#cb32-704" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine plots</span></span>
+<span id="cb32-705"><a href="#cb32-705" aria-hidden="true" tabindex="-1"></a>combined_plot <span class="ot">&lt;-</span> p1 <span class="sc">/</span> p2 <span class="sc">+</span></span>
+<span id="cb32-706"><a href="#cb32-706" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_annotation</span>(</span>
+<span id="cb32-707"><a href="#cb32-707" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Bioinformatics Drug Discovery - Chemical Space Exploration&quot;</span>,</span>
+<span id="cb32-708"><a href="#cb32-708" aria-hidden="true" tabindex="-1"></a>    <span class="at">theme =</span> <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>, <span class="at">size =</span> <span class="dv">18</span>))</span>
+<span id="cb32-709"><a href="#cb32-709" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb32-710"><a href="#cb32-710" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-711"><a href="#cb32-711" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(combined_plot)</span>
+<span id="cb32-712"><a href="#cb32-712" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;plots/chemical_space_analysis.png&quot;</span>, combined_plot, <span class="at">width =</span> <span class="dv">12</span>, <span class="at">height =</span> <span class="dv">10</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span>
+<span id="cb32-713"><a href="#cb32-713" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb32-714"><a href="#cb32-714" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-715"><a href="#cb32-715" aria-hidden="true" tabindex="-1"></a><span class="fu">## Bioactivity Distribution</span></span>
 <span id="cb32-716"><a href="#cb32-716" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-717"><a href="#cb32-717" aria-hidden="true" tabindex="-1"></a><span class="co"># TPSA vs LogP</span></span>
-<span id="cb32-718"><a href="#cb32-718" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_dataset, <span class="fu">aes</span>(<span class="at">x =</span> TPSA, <span class="at">y =</span> LogP, <span class="at">color =</span> pIC50)) <span class="sc">+</span></span>
-<span id="cb32-719"><a href="#cb32-719" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">size =</span> <span class="fl">2.5</span>) <span class="sc">+</span></span>
-<span id="cb32-720"><a href="#cb32-720" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_c</span>(<span class="at">option =</span> <span class="st">&quot;plasma&quot;</span>) <span class="sc">+</span></span>
-<span id="cb32-721"><a href="#cb32-721" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb32-722"><a href="#cb32-722" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Polar Surface Area vs Lipophilicity&quot;</span>,</span>
-<span id="cb32-723"><a href="#cb32-723" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;TPSA (Ų)&quot;</span>,</span>
-<span id="cb32-724"><a href="#cb32-724" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;LogP&quot;</span>,</span>
-<span id="cb32-725"><a href="#cb32-725" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;pIC50&quot;</span></span>
-<span id="cb32-726"><a href="#cb32-726" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb32-727"><a href="#cb32-727" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
-<span id="cb32-728"><a href="#cb32-728" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>))</span>
-<span id="cb32-729"><a href="#cb32-729" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-730"><a href="#cb32-730" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine plots</span></span>
-<span id="cb32-731"><a href="#cb32-731" aria-hidden="true" tabindex="-1"></a>combined_plot <span class="ot">&lt;-</span> p1 <span class="sc">/</span> p2 <span class="sc">+</span></span>
-<span id="cb32-732"><a href="#cb32-732" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_annotation</span>(</span>
-<span id="cb32-733"><a href="#cb32-733" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Bioinformatics Drug Discovery - Chemical Space Exploration&quot;</span>,</span>
-<span id="cb32-734"><a href="#cb32-734" aria-hidden="true" tabindex="-1"></a>    <span class="at">theme =</span> <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>, <span class="at">size =</span> <span class="dv">18</span>))</span>
-<span id="cb32-735"><a href="#cb32-735" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb32-736"><a href="#cb32-736" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-737"><a href="#cb32-737" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(combined_plot)</span>
-<span id="cb32-738"><a href="#cb32-738" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;plots/chemical_space_analysis.png&quot;</span>, combined_plot, <span class="at">width =</span> <span class="dv">12</span>, <span class="at">height =</span> <span class="dv">10</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span>
-<span id="cb32-739"><a href="#cb32-739" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-740"><a href="#cb32-740" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-741"><a href="#cb32-741" aria-hidden="true" tabindex="-1"></a><span class="fu">## Bioactivity Distribution</span></span>
-<span id="cb32-742"><a href="#cb32-742" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-743"><a href="#cb32-743" aria-hidden="true" tabindex="-1"></a><span class="in">```{r visualize-bioactivity}</span></span>
-<span id="cb32-744"><a href="#cb32-744" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: visualize-bioactivity  </span></span>
-<span id="cb32-745"><a href="#cb32-745" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb32-746"><a href="#cb32-746" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 10</span></span>
-<span id="cb32-747"><a href="#cb32-747" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 6</span></span>
-<span id="cb32-748"><a href="#cb32-748" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-749"><a href="#cb32-749" aria-hidden="true" tabindex="-1"></a><span class="co"># pIC50 distribution</span></span>
-<span id="cb32-750"><a href="#cb32-750" aria-hidden="true" tabindex="-1"></a>p_dist <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_dataset, <span class="fu">aes</span>(<span class="at">x =</span> pIC50, <span class="at">fill =</span> bioactivity_class)) <span class="sc">+</span></span>
-<span id="cb32-751"><a href="#cb32-751" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">50</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
-<span id="cb32-752"><a href="#cb32-752" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(</span>
-<span id="cb32-753"><a href="#cb32-753" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
-<span id="cb32-754"><a href="#cb32-754" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Highly Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#e41a1c&quot;</span>,</span>
-<span id="cb32-755"><a href="#cb32-755" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#377eb8&quot;</span>,</span>
-<span id="cb32-756"><a href="#cb32-756" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Moderately Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#4daf4a&quot;</span>,</span>
-<span id="cb32-757"><a href="#cb32-757" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Inactive&quot;</span> <span class="ot">=</span> <span class="st">&quot;#999999&quot;</span></span>
-<span id="cb32-758"><a href="#cb32-758" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb32-759"><a href="#cb32-759" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb32-760"><a href="#cb32-760" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb32-761"><a href="#cb32-761" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Distribution of Bioactivity (pIC50)&quot;</span>,</span>
-<span id="cb32-762"><a href="#cb32-762" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;pIC50&quot;</span>,</span>
-<span id="cb32-763"><a href="#cb32-763" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Count&quot;</span>,</span>
-<span id="cb32-764"><a href="#cb32-764" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">&quot;Bioactivity Class&quot;</span></span>
-<span id="cb32-765"><a href="#cb32-765" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb32-766"><a href="#cb32-766" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
-<span id="cb32-767"><a href="#cb32-767" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb32-768"><a href="#cb32-768" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>,</span>
-<span id="cb32-769"><a href="#cb32-769" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>, <span class="at">size =</span> <span class="dv">16</span>)</span>
-<span id="cb32-770"><a href="#cb32-770" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb32-771"><a href="#cb32-771" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-772"><a href="#cb32-772" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p_dist)</span>
-<span id="cb32-773"><a href="#cb32-773" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;plots/bioactivity_distribution.png&quot;</span>, p_dist, <span class="at">width =</span> <span class="dv">10</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span>
-<span id="cb32-774"><a href="#cb32-774" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-775"><a href="#cb32-775" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-776"><a href="#cb32-776" aria-hidden="true" tabindex="-1"></a>To be continued in Part 2...</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
+<span id="cb32-717"><a href="#cb32-717" aria-hidden="true" tabindex="-1"></a><span class="in">```{r visualize-bioactivity}</span></span>
+<span id="cb32-718"><a href="#cb32-718" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: visualize-bioactivity  </span></span>
+<span id="cb32-719"><a href="#cb32-719" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb32-720"><a href="#cb32-720" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 10</span></span>
+<span id="cb32-721"><a href="#cb32-721" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 6</span></span>
+<span id="cb32-722"><a href="#cb32-722" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-723"><a href="#cb32-723" aria-hidden="true" tabindex="-1"></a><span class="co"># pIC50 distribution</span></span>
+<span id="cb32-724"><a href="#cb32-724" aria-hidden="true" tabindex="-1"></a>p_dist <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_dataset, <span class="fu">aes</span>(<span class="at">x =</span> pIC50, <span class="at">fill =</span> bioactivity_class)) <span class="sc">+</span></span>
+<span id="cb32-725"><a href="#cb32-725" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">50</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
+<span id="cb32-726"><a href="#cb32-726" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(</span>
+<span id="cb32-727"><a href="#cb32-727" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb32-728"><a href="#cb32-728" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Highly Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#e41a1c&quot;</span>,</span>
+<span id="cb32-729"><a href="#cb32-729" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#377eb8&quot;</span>,</span>
+<span id="cb32-730"><a href="#cb32-730" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Moderately Active&quot;</span> <span class="ot">=</span> <span class="st">&quot;#4daf4a&quot;</span>,</span>
+<span id="cb32-731"><a href="#cb32-731" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Inactive&quot;</span> <span class="ot">=</span> <span class="st">&quot;#999999&quot;</span></span>
+<span id="cb32-732"><a href="#cb32-732" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb32-733"><a href="#cb32-733" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-734"><a href="#cb32-734" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb32-735"><a href="#cb32-735" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Distribution of Bioactivity (pIC50)&quot;</span>,</span>
+<span id="cb32-736"><a href="#cb32-736" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;pIC50&quot;</span>,</span>
+<span id="cb32-737"><a href="#cb32-737" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Count&quot;</span>,</span>
+<span id="cb32-738"><a href="#cb32-738" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">&quot;Bioactivity Class&quot;</span></span>
+<span id="cb32-739"><a href="#cb32-739" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-740"><a href="#cb32-740" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb32-741"><a href="#cb32-741" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb32-742"><a href="#cb32-742" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>,</span>
+<span id="cb32-743"><a href="#cb32-743" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">&quot;bold&quot;</span>, <span class="at">size =</span> <span class="dv">16</span>)</span>
+<span id="cb32-744"><a href="#cb32-744" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb32-745"><a href="#cb32-745" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-746"><a href="#cb32-746" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p_dist)</span>
+<span id="cb32-747"><a href="#cb32-747" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;plots/bioactivity_distribution.png&quot;</span>, p_dist, <span class="at">width =</span> <span class="dv">10</span>, <span class="at">height =</span> <span class="dv">6</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span>
+<span id="cb32-748"><a href="#cb32-748" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb32-749"><a href="#cb32-749" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-750"><a href="#cb32-750" aria-hidden="true" tabindex="-1"></a>To be continued in Part 2...</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
